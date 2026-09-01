@@ -1,0 +1,62 @@
+# Local development dependencies only.
+#
+# Production runs Postgres as a Coolify-managed database resource (so it
+# inherits Coolify's scheduled backups) and media on Cloudflare R2 — see
+# infra/docker-compose.production.yml and infra/DEPLOY.md.
+#
+# Ports are deliberately offset from the defaults so this stack can run
+# alongside other local projects.
+
+name: cms-dev
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cms
+      POSTGRES_PASSWORD: cms
+      POSTGRES_DB: cms
+    ports:
+      - "5434:5432"
+    volumes:
+      - ./.data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cms -d cms"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Stands in for Cloudflare R2. The same S3 client talks to both; the only
+  # difference is forcePathStyle, which packages/media derives from S3_ENDPOINT.
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9101"
+    environment:
+      MINIO_ROOT_USER: cmsminio
+      MINIO_ROOT_PASSWORD: cmsminio123
+    ports:
+      - "9100:9000"
+      - "9101:9101"
+    volumes:
+      - ./.data/minio:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # One-shot: create the bucket and make it publicly readable, because media
+  # URLs are served straight to browsers and crawlers.
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 cmsminio cmsminio123 &&
+      mc mb --ignore-existing local/cms-media &&
+      mc anonymous set download local/cms-media
+      "
