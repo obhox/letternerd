@@ -44,23 +44,32 @@ export interface EditorCommand {
  * Marks where the caret should land inside a template, and is stripped before
  * the text reaches the document.
  *
- * A plain-ASCII sentinel rather than a control character: these templates are
+ * Plain-ASCII sentinels rather than control characters: these templates are
  * read and edited by people, and an invisible marker in a string literal is a
  * marker somebody eventually deletes by accident.
+ *
+ * `CARET` on its own places the caret. A `CARET`…`CARET_END` pair selects the
+ * text between them, so a placeholder is typed over rather than deleted first.
  */
 const CARET = "[[caret]]";
+const CARET_END = "[[/caret]]";
 
 interface Skeleton {
   text: string;
-  caret: number;
+  /** Selection anchor, relative to the start of `text`. */
+  from: number;
+  /** Selection head. Equal to `from` for a bare caret. */
+  to: number;
 }
 
 function skeleton(template: string): Skeleton {
-  const caret = template.indexOf(CARET);
-  return {
-    text: template.replace(CARET, ""),
-    caret: caret < 0 ? template.length : caret,
-  };
+  const start = template.indexOf(CARET);
+  const withoutStart = template.replace(CARET, "");
+  const end = withoutStart.indexOf(CARET_END);
+  const text = withoutStart.replace(CARET_END, "");
+
+  const from = start < 0 ? text.length : start;
+  return { text, from, to: end < 0 ? from : end };
 }
 
 /**
@@ -87,11 +96,11 @@ function insertBlock(view: EditorView, template: string): void {
   const trail = range.to === state.doc.length || rest === "\n" ? "\n" : "\n\n";
 
   const block = skeleton(template);
-  const anchor = from + lead.length + block.caret;
+  const base = from + lead.length;
 
   view.dispatch({
     changes: { from, to: range.to, insert: `${lead}${block.text}${trail}` },
-    selection: EditorSelection.single(anchor),
+    selection: EditorSelection.range(base + block.from, base + block.to),
     scrollIntoView: true,
   });
   view.focus();
@@ -184,7 +193,21 @@ export const BLOCK_COMMANDS: EditorCommand[] = [
       "Question and answer. Each answer must also appear in the body above — an " +
       "answer that exists only here will not pass the publish gate",
     icon: CircleHelpIcon,
-    run: (view) => insertBlock(view, `:::faq\n### ${CARET}\n\n:::`),
+    /*
+     * Placeholder text, not empty scaffolding.
+     *
+     * An empty `### ` and an empty answer trip `faq-answer-in-body`, which is
+     * one of the three rules that refuse a publish. Shipping a toolbar button
+     * that puts the document straight into a refused state — with an error
+     * quoting an empty question — teaches authors that the checks panel fires
+     * at nothing. The block starts valid instead, and the author edits it.
+     * The question is selected so the first keystroke replaces it.
+     */
+    run: (view) =>
+      insertBlock(
+        view,
+        `:::faq\n### ${CARET}What happens if I do this?${CARET_END}\n\nAnswer it here, in a sentence or two.\n:::`,
+      ),
   },
   {
     id: "howto",

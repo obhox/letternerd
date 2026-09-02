@@ -42,6 +42,20 @@ export interface EditorDocument {
   updatedAt: string;
   publishedAt: string | null;
   scheduledFor: string | null;
+  /**
+   * Derived by `get_document`: the document is published or scheduled, and its
+   * markdown no longer matches the `contentHash` recorded at the last publish.
+   *
+   * Saving a published document moves `bodyMd` and deliberately does not
+   * re-render, so readers keep seeing the HTML from the last publish. This is
+   * the fact that separates "saved" from "live", and the editor has to say so.
+   */
+  hasUnpublishedChanges: boolean;
+  /**
+   * Rendered by an older pipeline version than the current one. Not the
+   * author's doing and cleared by a backfill job, so it is reported quietly.
+   */
+  renderStale: boolean;
 }
 
 /**

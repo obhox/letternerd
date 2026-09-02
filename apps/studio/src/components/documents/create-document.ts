@@ -18,7 +18,7 @@ export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
  * only explains it.
  */
 export const SLUG_RULE =
-  "Lowercase letters and numbers, separated by single hyphens. No spaces, accents or punctuation.";
+  "Lowercase letters and numbers, separated by single hyphens.";
 
 /** Matches the capability's `max(200)`. */
 export const SLUG_MAX_LENGTH = 200;

@@ -48,7 +48,8 @@ interface TypeMeta {
   singular: string;
   plural: string;
   title: string;
-  description: string;
+  /** Omitted where the title already says it. */
+  description?: string;
   emptyTitle: string;
   emptyDescription: string;
 }
@@ -59,28 +60,24 @@ export const TYPE_META: Record<DocumentType, TypeMeta> = {
     singular: "post",
     plural: "posts",
     title: "Posts",
-    description: "Articles that appear in feeds, the sitemap and llms.txt.",
     emptyTitle: "No posts yet",
-    emptyDescription: "Posts are the articles this site publishes. Write the first one.",
+    emptyDescription: "Articles that appear in feeds, the sitemap and llms.txt.",
   },
   page: {
     section: "pages",
     singular: "page",
     plural: "pages",
     title: "Pages",
-    description: "Standalone pages addressed by path rather than by feed position.",
     emptyTitle: "No pages yet",
-    emptyDescription: "Pages hold standing content — about, pricing, contact.",
+    emptyDescription: "Standing content addressed by path — about, pricing, contact.",
   },
   block: {
     section: "blocks",
     singular: "block",
     plural: "blocks",
     title: "Blocks",
-    description: "Reusable fragments embedded into posts and pages by key.",
     emptyTitle: "No blocks yet",
-    emptyDescription:
-      "Blocks are fragments you write once and embed in many documents.",
+    emptyDescription: "Fragments you write once and embed in many documents by key.",
   },
 };
 

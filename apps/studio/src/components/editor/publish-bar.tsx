@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ClockIcon, HistoryIcon, SaveIcon, SendIcon } from "lucide-react";
+import { ClockIcon, HistoryIcon, InfoIcon, RadioTowerIcon, SaveIcon, SendIcon } from "lucide-react";
 import { Badge, Button, Input, Spinner, StatusBadge, type DocumentStatus } from "@cms/ui";
 
 /**
@@ -22,6 +22,10 @@ export interface PublishBarProps {
   publishing: boolean;
   lastSavedAt: Date | null;
   saveError: string | null;
+  /** Saved to the database, but not in the HTML readers are being served. */
+  savedIsNotLive: boolean;
+  /** Rendered by an older pipeline version. A backfill clears it. */
+  renderStale: boolean;
   scheduleAt: string;
   onScheduleAtChange: (value: string) => void;
   onSave: () => void;
@@ -79,6 +83,8 @@ export function PublishBar({
   publishing,
   lastSavedAt,
   saveError,
+  savedIsNotLive,
+  renderStale,
   scheduleAt,
   onScheduleAtChange,
   onSave,
@@ -91,6 +97,12 @@ export function PublishBar({
   return (
     <div className="flex flex-wrap items-center gap-2">
       <StatusBadge status={status} />
+      {savedIsNotLive && (
+        <Badge variant="warning">
+          <RadioTowerIcon className="size-3" aria-hidden="true" />
+          Not live yet
+        </Badge>
+      )}
       <SaveIndicator
         dirty={dirty}
         saving={saving}
@@ -145,6 +157,34 @@ export function PublishBar({
           </span>
         )}
       </div>
+
+      {savedIsNotLive && (
+        /*
+         * The sentence, not just the badge.
+         *
+         * "Published" beside "Saved 15:48" reads as "this is live", and it is
+         * the one thing it is not — the saved markdown is not what any reader
+         * has been served. Saying so in words, next to the button that fixes
+         * it, is the whole point of this line.
+         */
+        <p className="flex w-full items-center gap-1.5 text-xs text-[var(--color-warn)]">
+          <RadioTowerIcon className="size-3.5 shrink-0" aria-hidden="true" />
+          <span>
+            Saved changes are not live yet — readers still see the version from the last
+            publish.{canPublish ? " Publish to update it." : " An editor needs to publish it."}
+          </span>
+        </p>
+      )}
+
+      {renderStale && (
+        <p className="flex w-full items-center gap-1.5 text-xs text-[var(--color-ink-muted)]">
+          <InfoIcon className="size-3.5 shrink-0" aria-hidden="true" />
+          <span>
+            This page was rendered by an older version of the publishing pipeline. A backfill
+            re-renders it automatically — nothing for you to do.
+          </span>
+        </p>
+      )}
 
       {canPublish && scheduled && (
         <p className="w-full text-xs text-[var(--color-ink-muted)]">

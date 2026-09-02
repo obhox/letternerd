@@ -76,8 +76,8 @@ export function InsightList({
         }
         description={
           coverage.complete
-            ? `Every rule ran against ${coverage.documentsAnalysed} published documents and none of them found anything worth acting on.`
-            : "The checks that did run found nothing. That is not the same as everything being fine — see the checks listed above that were skipped."
+            ? `Every rule ran against ${coverage.documentsAnalysed} published documents and found nothing.`
+            : "The checks that ran found nothing. That is not the same as everything being fine — see the skipped checks above."
         }
       />
     );

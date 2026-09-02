@@ -96,10 +96,7 @@ export default async function MediaPage({
 
   return (
     <div className="mx-auto max-w-7xl">
-      <PageHeader
-        title="Media"
-        description="Images available to every document on this site. Paste an image into markdown with its media:// reference."
-      >
+      <PageHeader title="Media">
         {/*
           The count is rendered whether or not the filter is on, and it is the
           filter's own control. An editor should never have to go looking for

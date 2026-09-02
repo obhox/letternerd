@@ -31,6 +31,8 @@ interface DocumentRow {
   updatedAt?: unknown;
   publishedAt?: unknown;
   scheduledFor?: unknown;
+  hasUnpublishedChanges?: unknown;
+  renderStale?: unknown;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -79,6 +81,11 @@ export default async function PostEditorPage({
     updatedAt: iso(row.updatedAt) ?? new Date().toISOString(),
     publishedAt: iso(row.publishedAt),
     scheduledFor: iso(row.scheduledFor),
+    // Both are derived by the capability rather than computed here: working
+    // out whether the stored render is behind the markdown needs the content
+    // hash and the pipeline version, and a second opinion would drift.
+    hasUnpublishedChanges: row.hasUnpublishedChanges === true,
+    renderStale: row.renderStale === true,
   };
 
   return (

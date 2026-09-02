@@ -1,7 +1,7 @@
 import { actorFromApiKey } from "@cms/auth";
 import { originAllowed, verifyApiKey } from "@cms/db/api-keys";
 import { db, storage, now } from "@/server/services";
-import { errorResponse, etagFor, matchRoute } from "@/server/rest";
+import { coerceQuery, errorResponse, etagFor, matchRoute } from "@/server/rest";
 
 /**
  * The public content API.
@@ -68,7 +68,7 @@ async function handle(request: Request, path: string[]): Promise<Response> {
     }
   }
 
-  const query = Object.fromEntries(new URL(request.url).searchParams);
+  const query = coerceQuery(capability, Object.fromEntries(new URL(request.url).searchParams));
   // Path params last: a caller must not be able to override `:id` from the
   // query string and address a different row than the URL names.
   const input = { ...query, ...body, ...params };

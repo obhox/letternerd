@@ -193,9 +193,6 @@ export function UploadDropzone({
             patch(item.id, {
               status: outcome.duplicate ? "duplicate" : "done",
               progress: 1,
-              message: outcome.duplicate
-                ? "This site already had these exact bytes, so the existing asset was reused."
-                : undefined,
             });
           } catch (error) {
             // Caught per file and never rethrown: one rejection must not
@@ -274,8 +271,7 @@ export function UploadDropzone({
           Upload images
         </Button>
         <p className="text-xs text-[var(--color-ink-muted)]">
-          Or drag them anywhere on this page. Up to {MAX_UPLOAD_BYTES / 1024 / 1024} MB each; a file
-          this site already has is reused rather than stored twice.
+          Or drag them anywhere on this page. Up to {MAX_UPLOAD_BYTES / 1024 / 1024} MB each.
         </p>
       </div>
 

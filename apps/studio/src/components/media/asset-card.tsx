@@ -310,8 +310,7 @@ function DeleteButton({
                   ? `Showing ${refusal.documents.length} of ${refusal.count}. `
                   : ""}
                 Remove the <code className="font-mono">{asset.ref}</code> reference from
-                {refusal.count === 1 ? " it" : " them"} first — deleting the asset now would leave an
-                empty box on the published page.
+                {refusal.count === 1 ? " it" : " them"} first.
               </p>
             </div>
           )}

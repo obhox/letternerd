@@ -97,7 +97,6 @@ export default async function NewDocumentPage({
     <div className="flex flex-col gap-4">
       <PageHeader
         title={`New ${TYPE_META[initialType].singular}`}
-        description="Creates a draft. Nothing is published until you publish it."
         className="pb-0"
       />
       <NewDocumentForm

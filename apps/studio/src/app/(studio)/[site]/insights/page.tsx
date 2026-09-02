@@ -89,7 +89,7 @@ export default async function InsightsPage({ params }: { params: Promise<{ site:
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
       <PageHeader
         title="Insights"
-        description={`What to do next, ranked. Based on the last ${WINDOW_DAYS} days and ${insights.coverage.documentsAnalysed} published documents.`}
+        description={`Last ${WINDOW_DAYS} days, ${insights.coverage.documentsAnalysed} published documents.`}
       />
 
       <ProviderNotice coverage={insights.coverage} />

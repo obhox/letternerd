@@ -82,6 +82,19 @@ export function PostEditor({ site, post, canPublish, descriptionRange }: PostEdi
   const [scheduleAt, setScheduleAt] = useState("");
 
   /**
+   * The markdown as of the last publish, when it can be known.
+   *
+   * `hasUnpublishedChanges` is accurate at page load and stale a keystroke
+   * later, so it is not read directly. If the server says nothing is
+   * unpublished then the loaded body *is* the published body; if it says
+   * something is, we do not know what was published, only that it was
+   * something else — which `null` records honestly, and a publish resolves.
+   */
+  const [publishedBody, setPublishedBody] = useState<string | null>(
+    post.hasUnpublishedChanges ? null : post.bodyMd,
+  );
+
+  /**
    * Mirrors of the three values the async paths read.
    *
    * A save started by a timer runs long after the render that scheduled it, so
@@ -210,6 +223,9 @@ export function PostEditor({ site, post, canPublish, descriptionRange }: PostEdi
 
       if (result.ok) {
         setStatus(result.data.status);
+        // Publishing rendered exactly the body that was saved a moment ago,
+        // so that is now the version readers see.
+        setPublishedBody(savedRef.current.bodyMd);
         setPublishNotice(
           result.data.status === "scheduled" && result.data.scheduledFor
             ? `Scheduled for ${new Date(result.data.scheduledFor).toLocaleString()}.`
@@ -245,6 +261,33 @@ export function PostEditor({ site, post, canPublish, descriptionRange }: PostEdi
     slug: draft.slug,
     markdown: draft.bodyMd,
   });
+
+  /**
+   * Saved, but not what readers see.
+   *
+   * Deliberately measured against `saved` rather than `draft`: unsaved edits
+   * are a different distance from the reader and have their own indicator.
+   * Collapsing the two would hide the one an author cannot otherwise discover,
+   * because nothing else on this screen distinguishes a published document
+   * from a published document that has been edited since.
+   */
+  const live = status === "published" || status === "scheduled";
+  const savedIsNotLive =
+    live && (publishedBody === null || saved.bodyMd !== publishedBody);
+
+  const nothingBlocking = preview.checked && preview.payload?.blocked === false;
+
+  /**
+   * Retire the refusal banner once the document stops deserving it.
+   *
+   * The banner records a publish attempt, but the author fixes the problem
+   * while looking at it, and a red "publishing was refused" left standing over
+   * a document that would now publish fine is a warning people learn to read
+   * past. A fresh check reporting nothing blocking is the signal to drop it.
+   */
+  useEffect(() => {
+    if (blocked && nothingBlocking) setBlocked(null);
+  }, [blocked, nothingBlocking]);
 
   const findings = preview.payload?.lints ?? [];
 
@@ -292,6 +335,8 @@ export function PostEditor({ site, post, canPublish, descriptionRange }: PostEdi
           publishing={publishing}
           lastSavedAt={lastSavedAt}
           saveError={saveError}
+          savedIsNotLive={savedIsNotLive}
+          renderStale={post.renderStale}
           scheduleAt={scheduleAt}
           onScheduleAtChange={setScheduleAt}
           onSave={() => void saveNow()}

@@ -155,7 +155,7 @@ export function NewDocumentForm({ action, initialType, cancelHref }: NewDocument
 
       <Field
         label="Description"
-        description="Optional. Becomes the meta description; 120–158 characters reads best."
+        description="Becomes the meta description. 120–158 characters."
         error={state.fieldErrors?.description}
       >
         {({ id, "aria-describedby": describedBy, "aria-invalid": invalid }) => (
@@ -172,7 +172,7 @@ export function NewDocumentForm({ action, initialType, cancelHref }: NewDocument
         )}
       </Field>
 
-      <Field label="Type" description="Where this document lives and how it is addressed.">
+      <Field label="Type">
         {({ id }) => (
           <>
             <Select value={type} onValueChange={(value) => setType(value as DocumentType)}>

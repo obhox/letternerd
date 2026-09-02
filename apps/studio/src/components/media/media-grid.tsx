@@ -29,9 +29,7 @@ export function MediaGrid({
         icon={ImageIcon}
         title={filtered ? "Every image has alt text" : "No images yet"}
         description={
-          filtered
-            ? "Nothing on this site is blocking a publish for a missing alt attribute."
-            : "Drag images anywhere on this page, or use the upload button above."
+          filtered ? undefined : "Drag images anywhere on this page, or use the upload button above."
         }
       />
     );

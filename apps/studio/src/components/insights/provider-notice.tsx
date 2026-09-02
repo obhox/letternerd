@@ -42,14 +42,13 @@ export function ProviderNotice({ coverage }: { coverage: CoverageView }) {
           <p className="mt-1 text-sm text-[var(--color-ink)]">
             {providerFailed ? (
               <>
-                {coverage.provider?.error} Until it is reconnected, the rules below were not
-                evaluated at all — an empty list here is not evidence that anything is fine.
+                {coverage.provider?.error} The rules below were not evaluated — an empty list is
+                not evidence that anything is fine.
               </>
             ) : (
               <>
-                No search or audience analytics provider is connected to this site, so there are no
-                impressions, clicks, click-through rates or ranking positions to judge anything
-                against. {coverage.documentsAnalysed} published{" "}
+                No analytics provider is connected, so there are no impressions, clicks or ranking
+                positions to judge against. {coverage.documentsAnalysed} published{" "}
                 {coverage.documentsAnalysed === 1 ? "document was" : "documents were"} checked
                 against the rules that need only this system's own data.
               </>
@@ -96,10 +95,8 @@ export function ProviderNotice({ coverage }: { coverage: CoverageView }) {
 
           {!providerFailed && (
             <p className="mt-3 text-sm text-[var(--color-ink-muted)]">
-              Connecting Google Search Console would turn those back on: which queries already show
-              this site, which pages rank just below page one, which titles are losing the click,
-              and which posts have started sliding. There is nowhere to store those credentials
-              yet — the connection is not built.
+              Connecting Google Search Console would turn those checks back on. That connection is
+              not built yet.
             </p>
           )}
         </div>

@@ -29,7 +29,7 @@ function LintCell({ report }: { report: unknown }) {
 
   if (!summary.checked) {
     return (
-      <Badge variant="outline" title="Not checked yet — lints run on preview and on publish.">
+      <Badge variant="outline" title="Lints run on preview and on publish.">
         Not checked
       </Badge>
     );

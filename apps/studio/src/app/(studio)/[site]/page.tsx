@@ -142,11 +142,11 @@ async function Overview({ siteSlug }: { siteSlug: string }) {
       <Card className="lg:col-span-2">
         <CardHeader>
           <CardTitle>Content by status</CardTitle>
-          <CardDescription>
-            {anyCapped
-              ? `Counts are capped at the ${SCAN_LIMIT} most recently updated documents per status; a "+" means there are more.`
-              : "Every document on this site, by where it is in the pipeline."}
-          </CardDescription>
+          {anyCapped ? (
+            <CardDescription>
+              {`Counts stop at the ${SCAN_LIMIT} most recently updated per status; "+" means more.`}
+            </CardDescription>
+          ) : null}
         </CardHeader>
         <CardContent>
           <dl className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -195,12 +195,11 @@ async function Overview({ siteSlug }: { siteSlug: string }) {
       <Card>
         <CardHeader>
           <CardTitle>Recently updated</CardTitle>
-          <CardDescription>The last thing anyone touched, across all types.</CardDescription>
         </CardHeader>
         <CardContent>
           {recent.length === 0 ? (
             <p className="py-4 text-sm text-[var(--color-ink-muted)]">
-              Nothing here yet. Create the first document to get started.
+              Nothing yet.
             </p>
           ) : (
             <ul>
@@ -231,7 +230,6 @@ async function Overview({ siteSlug }: { siteSlug: string }) {
             <CalendarClockIcon className="size-4 text-[var(--color-ink-muted)]" aria-hidden="true" />
             Scheduled
           </CardTitle>
-          <CardDescription>Documents waiting for their publish time.</CardDescription>
         </CardHeader>
         <CardContent>
           {scheduledDetails.length === 0 ? (
@@ -264,8 +262,8 @@ async function Overview({ siteSlug }: { siteSlug: string }) {
             Needs attention
           </CardTitle>
           <CardDescription>
-            Documents with lint errors, which the publish gate refuses. Warnings and documents
-            nobody has checked yet are not listed — only findings that actually block.
+            Lint errors, which the publish gate refuses. Warnings and unchecked documents are
+            not listed.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -308,7 +306,6 @@ export default async function OverviewPage({ params }: { params: Promise<{ site:
     <div className="flex flex-col gap-4">
       <PageHeader
         title="Overview"
-        description="What is live, what is waiting and what is broken."
         className="pb-0"
         actions={
           <Button asChild>
@@ -323,7 +320,7 @@ export default async function OverviewPage({ params }: { params: Promise<{ site:
         fallback={
           <div className="flex items-center gap-2 py-8 text-sm text-[var(--color-ink-muted)]">
             <Spinner size="sm" label="Loading the site overview" />
-            Gathering the site&rsquo;s content…
+            Loading…
           </div>
         }
       >

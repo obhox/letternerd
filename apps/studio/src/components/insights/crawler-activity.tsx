@@ -62,7 +62,7 @@ export function CrawlerActivity({
               // deployed on the consuming site, no row will ever appear, and a
               // chart of zeroes would look like a crawling problem instead of
               // an instrumentation one.
-              description="Either no bot fetched a page in this period, or the consuming site is not reporting crawler hits to the CMS. Both look identical from here, so nothing is charted."
+              description="Either no bot fetched a page in this period, or the consuming site is not reporting crawler hits. Both look identical from here, so nothing is charted."
             />
           </div>
         ) : (
@@ -96,9 +96,7 @@ export function CrawlerActivity({
       <section>
         <h3 className="text-sm font-semibold text-[var(--color-ink)]">Time to first crawl</h3>
         <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
-          How long after publishing an AI crawler first fetched each document. This is what proves
-          the sitemap’s <code className="font-mono text-xs">lastmod</code> and on-demand
-          revalidation are working.
+          How long after publishing an AI crawler first fetched each document.
         </p>
 
         <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -143,10 +141,9 @@ export function CrawlerActivity({
         <p className="mt-2 text-xs text-[var(--color-ink-muted)]">
           Raw crawler hits are kept for {timing.rawHitRetentionDays} days
           {timing.logRetainedSince
-            ? `, and this site's log currently reaches back to ${new Date(timing.logRetainedSince).toLocaleDateString()}`
+            ? `, and this site's log reaches back to ${new Date(timing.logRetainedSince).toLocaleDateString()}`
             : ", and this site has no crawler hits recorded at all"}
-          . Documents published before that are counted as unknown rather than as never crawled — a
-          pruned hit and an absent one look the same.
+          . Documents published before that count as unknown, not as never crawled.
         </p>
       </section>
 
@@ -175,9 +172,8 @@ export function CrawlerActivity({
         <section>
           <h3 className="text-sm font-semibold text-[var(--color-ink)]">Not measurable</h3>
           <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
-            These have no first-crawl time that can be trusted. They are listed separately rather
-            than counted as never crawled, because acting on the wrong one of those two wastes an
-            afternoon on a sitemap that is already fine.
+            No first-crawl time here can be trusted, so these are listed separately rather than
+            counted as never crawled.
           </p>
           <ul className="mt-2 divide-y divide-[var(--color-border)] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]">
             {unknown.map((row) => (
