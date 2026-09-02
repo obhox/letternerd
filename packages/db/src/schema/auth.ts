@@ -71,6 +71,13 @@ export const account = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
     accountId: text("account_id").notNull(),
     providerId: text("provider_id").notNull(),
+    /**
+     * Required by better-auth 1.7. Falorb's schema predates it, which is why
+     * it was missing here — and why sign-up failed at the insert rather than
+     * at startup. Verified against `getAuthTables()` from the installed
+     * version rather than copied from another project again.
+     */
+    issuer: text("issuer").notNull().default(""),
     accessToken: text("access_token"),
     refreshToken: text("refresh_token"),
     accessTokenExpiresAt: timestamp("access_token_expires_at", { withTimezone: true }),

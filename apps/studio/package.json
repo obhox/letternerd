@@ -9,7 +9,8 @@
     "build": "next build",
     "start": "next start --port 3000",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "create-account": "tsx --env-file=.env scripts/create-account.ts"
   },
   "dependencies": {
     "@cms/auth": "workspace:*",
@@ -51,6 +52,7 @@
     "@types/react-dom": "^19.0.3",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.3",
-    "vitest": "^3.0.5"
+    "vitest": "^3.0.5",
+    "tsx": "^4.19.2"
   }
 }
