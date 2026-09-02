@@ -40,17 +40,43 @@ function line(finding: EditorFinding): string | null {
     : `Line ${finding.line}, column ${finding.column}`;
 }
 
-export function FindingList({ findings }: { findings: EditorFinding[] }) {
+/**
+ * A finding, and — where it knows a line — a way to get there.
+ *
+ * "Line 42" is only useful to someone who can find line 42, and the editor
+ * deliberately keeps its gutter off by default. Making the position a button
+ * closes that gap: the check reports where the problem is, and the same words
+ * put the caret on it.
+ */
+export function FindingList({
+  findings,
+  onGoToLine,
+}: {
+  findings: EditorFinding[];
+  onGoToLine?: (line: number) => void;
+}) {
   return (
     <ul className="flex flex-col gap-2">
       {findings.map((finding, index) => {
         const position = line(finding);
+        const at = finding.line;
         return (
           <li key={`${finding.rule}-${finding.line ?? "x"}-${index}`} className="text-sm">
             <p className="text-[var(--color-ink)]">{finding.message}</p>
             <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--color-ink-muted)]">
               <code className="font-[family-name:var(--font-mono)]">{finding.rule}</code>
-              {position && <span>{position}</span>}
+              {position &&
+                (onGoToLine && at !== null ? (
+                  <button
+                    type="button"
+                    onClick={() => onGoToLine(at)}
+                    className="ui-focus-ring rounded underline underline-offset-2 hover:text-[var(--color-ink)]"
+                  >
+                    {position}
+                  </button>
+                ) : (
+                  <span>{position}</span>
+                ))}
             </p>
           </li>
         );
@@ -64,10 +90,12 @@ export interface LintPanelProps {
   /** False until a render has come back; "clean" and "unchecked" are not the same. */
   checked: boolean;
   pending: boolean;
+  /** Jumps the editor to a reported line. Omitted where there is no editor. */
+  onGoToLine?: (line: number) => void;
   className?: string;
 }
 
-export function LintPanel({ findings, checked, pending, className }: LintPanelProps) {
+export function LintPanel({ findings, checked, pending, onGoToLine, className }: LintPanelProps) {
   const blocking = findings.filter((finding) => finding.blocks);
   const errors = findings.filter((finding) => finding.severity === "error" && !finding.blocks);
   const warnings = findings.filter((finding) => finding.severity === "warning");
@@ -147,7 +175,7 @@ export function LintPanel({ findings, checked, pending, className }: LintPanelPr
                 <p className="mt-0.5 mb-2 text-xs text-[var(--color-ink-muted)]">
                   {group.consequence}
                 </p>
-                <FindingList findings={group.findings} />
+                <FindingList findings={group.findings} onGoToLine={onGoToLine} />
               </div>
             ))}
           </div>

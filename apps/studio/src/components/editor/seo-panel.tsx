@@ -11,13 +11,7 @@ import {
   fitToWidth,
   type FittedText,
 } from "./pixel-width";
-import type {
-  DocumentDraft,
-  EditorHeading,
-  EditorQaBlock,
-  EditorSite,
-  LengthRange,
-} from "./types";
+import type { DocumentDraft, EditorQaBlock, EditorSite, LengthRange } from "./types";
 
 /**
  * What the document looks like to a search engine, and what it will emit.
@@ -226,7 +220,6 @@ export interface SeoPanelProps {
   draft: DocumentDraft;
   onChange: (patch: Partial<DocumentDraft>) => void;
   descriptionRange: LengthRange;
-  headings: EditorHeading[];
   qaBlocks: EditorQaBlock[];
   className?: string;
 }
@@ -236,7 +229,6 @@ export function SeoPanel({
   draft,
   onChange,
   descriptionRange,
-  headings,
   qaBlocks,
   className,
 }: SeoPanelProps) {
@@ -341,46 +333,6 @@ export function SeoPanel({
             The page still publishes and still resolves. It is left out of the index only.
           </p>
         </div>
-      </section>
-
-      <section className="flex flex-col gap-2">
-        <div className="flex items-center gap-2">
-          <h2 className="text-sm font-medium">Outline</h2>
-          <Badge variant="outline">{headings.length}</Badge>
-        </div>
-        <p className="text-xs text-[var(--color-ink-muted)]">
-          Anchor ids survive a heading being reworded, so existing links keep resolving.
-        </p>
-
-        {headings.length === 0 ? (
-          <p className="text-xs text-[var(--color-ink-muted)]">No headings yet.</p>
-        ) : (
-          <ul className="flex flex-col">
-            {headings.map((heading) => (
-              <li
-                key={heading.id}
-                className="flex items-start gap-1 border-b border-[var(--color-border)] py-1.5 last:border-b-0"
-                style={{ paddingLeft: `${Math.max(0, heading.depth - 2) * 0.75}rem` }}
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs text-[var(--color-ink)]" title={heading.text}>
-                    <span className="text-[var(--color-ink-muted)]">h{heading.depth}</span>{" "}
-                    {heading.text}
-                  </p>
-                  <p className="truncate font-[family-name:var(--font-mono)] text-[0.6875rem] text-[var(--color-ink-muted)]">
-                    #{heading.id}
-                  </p>
-                  {heading.aliases.length > 0 && (
-                    <p className="truncate text-[0.6875rem] text-[var(--color-ink-muted)]">
-                      also resolves: {heading.aliases.map((alias) => `#${alias}`).join(", ")}
-                    </p>
-                  )}
-                </div>
-                <CopyAnchor anchor={`#${heading.id}`} />
-              </li>
-            ))}
-          </ul>
-        )}
       </section>
 
       <section className="flex flex-col gap-2">

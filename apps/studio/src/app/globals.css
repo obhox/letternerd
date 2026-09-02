@@ -1,4 +1,12 @@
 @import "tailwindcss";
+/*
+ * Tailwind scans from this app and skips node_modules, so a workspace package
+ * is invisible to it — every utility class inside @cms/ui was silently absent
+ * from the build, focus rings included. The package's own stylesheet carries an
+ * `@source` covering its source tree; importing it is what registers those
+ * files. Without this line the component library renders unstyled.
+ */
+@import "@cms/ui/styles.css";
 
 /*
  * The studio's design system.
@@ -40,7 +48,9 @@
   --color-surface-sunken: var(--grey-2);
   --color-muted: var(--grey-2);
   --color-border: var(--grey-3);
-  --color-border-strong: var(--grey-4);
+  /* grey-5 is the one stop clearing 3:1 (WCAG 1.4.11) against both
+     ends of the ramp, so control boundaries survive inversion. */
+  --color-border-strong: var(--grey-5);
 
   /* ---- ink ------------------------------------------------------------- */
   --color-ink: var(--grey-10);
@@ -117,33 +127,42 @@
  * The surfaces do not go to pure black: a true-black panel under a bright
  * editor pane is a glare edge, and hairline borders vanish against it.
  */
+/*
+ * Dark mode inverts the ramp rather than recolouring it.
+ *
+ * Written against `:root` inside the media query rather than as a nested
+ * `@theme`. Tailwind v4 hoists every `@theme` declaration to `:root` and drops
+ * the at-rule around it, so a nested `@media { @theme { … } }` applies its
+ * values unconditionally — which made the studio permanently dark regardless of
+ * system preference. These are plain custom-property overrides, so the cascade
+ * behaves normally.
+ *
+ * The surfaces deliberately stop short of pure black: a true-black panel beside
+ * a bright editor pane is a glare edge, and hairline borders vanish against it.
+ */
 @media (prefers-color-scheme: dark) {
-  @theme {
-    --color-canvas: var(--grey-10);
-    --color-surface: var(--grey-9);
-    --color-surface-sunken: oklch(0.085 0 0);
-    --color-muted: var(--grey-8);
-    --color-border: oklch(0.26 0 0);
-    --color-border-strong: var(--grey-7);
-
-    --color-ink: var(--grey-1);
-    --color-ink-secondary: var(--grey-4);
-    --color-ink-muted: var(--grey-5);
-    --color-ink-faint: var(--grey-6);
-
-    --color-accent: var(--grey-1);
-    --color-accent-ink: var(--grey-10);
-    --color-accent-hover: var(--grey-0);
-
-    --color-danger: var(--grey-0);
-    --color-danger-surface: var(--grey-8);
-    --color-warn: var(--grey-4);
-    --color-warn-surface: var(--grey-9);
-    --color-ok: var(--grey-5);
-    --color-ok-surface: var(--grey-9);
-
-    --shadow-raised: 0 1px 2px oklch(0 0 0 / 0.4);
-    --shadow-overlay: 0 8px 24px oklch(0 0 0 / 0.6), 0 2px 6px oklch(0 0 0 / 0.4);
+  :root {
+  --color-canvas: var(--grey-10);
+  --color-surface: var(--grey-9);
+  --color-surface-sunken: oklch(0.085 0 0);
+  --color-muted: var(--grey-8);
+  --color-border: oklch(0.26 0 0);
+  --color-border-strong: var(--grey-5);
+  --color-ink: var(--grey-1);
+  --color-ink-secondary: var(--grey-4);
+  --color-ink-muted: var(--grey-5);
+  --color-ink-faint: var(--grey-6);
+  --color-accent: var(--grey-1);
+  --color-accent-ink: var(--grey-10);
+  --color-accent-hover: var(--grey-0);
+  --color-danger: var(--grey-0);
+  --color-danger-surface: var(--grey-8);
+  --color-warn: var(--grey-4);
+  --color-warn-surface: var(--grey-9);
+  --color-ok: var(--grey-5);
+  --color-ok-surface: var(--grey-9);
+  --shadow-raised: 0 1px 2px oklch(0 0 0 / 0.4);
+  --shadow-overlay: 0 8px 24px oklch(0 0 0 / 0.6), 0 2px 6px oklch(0 0 0 / 0.4);
   }
 }
 

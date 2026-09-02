@@ -95,8 +95,12 @@ export default async function NewDocumentPage({
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Kept deliberately against the copy trim: a "New post" screen with a
+          create button reads as though it publishes. Saying otherwise costs one
+          line and prevents a surprise that is awkward to undo. */}
       <PageHeader
         title={`New ${TYPE_META[initialType].singular}`}
+        description="Creates a draft. Nothing goes live until you publish."
         className="pb-0"
       />
       <NewDocumentForm

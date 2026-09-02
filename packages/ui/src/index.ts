@@ -119,6 +119,8 @@ export { EmptyState } from "./components/empty-state";
 export type { EmptyStateProps } from "./components/empty-state";
 export { PageHeader } from "./components/page-header";
 export type { PageHeaderProps } from "./components/page-header";
+export { Prose } from "./components/prose";
+export type { ProseProps } from "./components/prose";
 
 /* Data display */
 export { DataTable } from "./components/data-table";
@@ -131,6 +133,8 @@ export { DOCUMENT_STATUSES, StatusBadge, statusLabel } from "./components/status
 export type { DocumentStatus, StatusBadgeProps } from "./components/status-badge";
 export { LintBadge } from "./components/lint-badge";
 export type { LintBadgeProps, LintCounts } from "./components/lint-badge";
+export { StatTile } from "./components/stat-tile";
+export type { StatTileProps, StatTileSize } from "./components/stat-tile";
 export { Toolbar, ToolbarGroup, ToolbarSeparator } from "./components/toolbar";
 export type { ToolbarProps } from "./components/toolbar";
 

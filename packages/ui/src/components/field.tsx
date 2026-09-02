@@ -1,5 +1,6 @@
 "use client";
 
+import { CircleAlertIcon } from "lucide-react";
 import { useId, type ReactNode } from "react";
 import { cn } from "../cn";
 import { Label } from "./label";
@@ -39,6 +40,11 @@ export interface FieldProps {
  * read out; without `aria-describedby` the hint and the error are visible text
  * that a screen reader user simply never encounters, and without
  * `aria-invalid` the control sounds fine while outlined in red.
+ *
+ * The error line cannot be red here, which is fine — it was never supposed to
+ * be *only* red. It gets the darkest ink, a heavier weight than the hint it
+ * replaces in the eye's queue, and an icon, so it is the most contrasted thing
+ * in the field group by some distance.
  */
 export function Field({
   label,
@@ -81,7 +87,7 @@ export function Field({
           <>
             {/* The asterisk is decorative; `required` on the control is what
                 actually announces the constraint, so this must not be read. */}
-            <span aria-hidden="true" className="ml-0.5 text-[var(--color-danger)]">
+            <span aria-hidden="true" className="ml-0.5 text-[var(--color-ink-muted)]">
               *
             </span>
           </>
@@ -96,8 +102,13 @@ export function Field({
       {hasError && (
         // `role="alert"` so a validation failure arriving after submit is
         // spoken without the user having to go hunting for it.
-        <p id={errorId} role="alert" className="text-xs text-[var(--color-danger)]">
-          {error}
+        <p
+          id={errorId}
+          role="alert"
+          className="flex items-start gap-1.5 text-xs font-medium text-[var(--color-danger)]"
+        >
+          <CircleAlertIcon className="mt-px size-3.5 shrink-0" aria-hidden="true" />
+          <span>{error}</span>
         </p>
       )}
     </div>

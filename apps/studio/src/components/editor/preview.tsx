@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type RefObject } from "react";
 import { EyeIcon } from "lucide-react";
 import { Badge, Spinner, cn } from "@cms/ui";
 import { renderPreviewAction } from "./actions";
@@ -121,7 +121,9 @@ export function usePreview({
  * them.
  */
 const PROSE = cn(
-  "text-sm leading-relaxed text-[var(--color-ink)]",
+  // Set at the same size and rhythm as the writing surface, so the two panes
+  // in split view read as one document rather than as two applications.
+  "mx-auto max-w-[44rem] text-[0.9375rem]/[1.7] text-[var(--color-ink)]",
   "[&_p]:my-3",
   "[&_h1]:mt-6 [&_h1]:mb-2 [&_h1]:text-xl [&_h1]:font-semibold",
   "[&_h2]:mt-6 [&_h2]:mb-2 [&_h2]:text-lg [&_h2]:font-semibold",
@@ -153,9 +155,15 @@ const PROSE = cn(
 export interface PreviewProps {
   state: PreviewState;
   className?: string;
+  /**
+   * The element that scrolls. Handed out so the screen can keep this pane and
+   * the editor looking at the same section — see `scroll-sync.ts`. The pane
+   * itself does no syncing; it only exposes what it owns.
+   */
+  scrollRef?: RefObject<HTMLDivElement | null>;
 }
 
-export function Preview({ state, className }: PreviewProps) {
+export function Preview({ state, className, scrollRef }: PreviewProps) {
   const { payload, pending, error } = state;
 
   return (
@@ -180,7 +188,7 @@ export function Preview({ state, className }: PreviewProps) {
         </div>
       </header>
 
-      <div className="ui-scroll min-h-0 flex-1 overflow-auto px-4 py-2">
+      <div ref={scrollRef} className="ui-scroll min-h-0 flex-1 overflow-auto px-4 py-3">
         {error ? (
           <p role="alert" className="py-6 text-sm text-[var(--color-danger)]">
             {error}

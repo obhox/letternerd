@@ -3,12 +3,18 @@ import type { EditorView } from "@codemirror/view";
 import {
   BoldIcon,
   CircleHelpIcon,
+  CodeIcon,
   FilmIcon,
   Heading2Icon,
+  Heading3Icon,
+  ItalicIcon,
   LinkIcon,
   ListChecksIcon,
+  ListIcon,
   ListOrderedIcon,
+  MinusIcon,
   QuoteIcon,
+  SquareCodeIcon,
 } from "lucide-react";
 import type { ComponentType } from "react";
 
@@ -163,6 +169,54 @@ function insertLink(view: EditorView): void {
 }
 
 /**
+ * Toggle a line prefix across every line the selection touches.
+ *
+ * The "is it already on?" test looks at all the lines at once, so pressing the
+ * bullet-list button over a half-marked selection completes it rather than
+ * inverting each line — which is the behaviour of every editor an author has
+ * used, and the opposite of what per-line toggling would produce.
+ *
+ * Blank lines are skipped when the marker is being added: a list marker on an
+ * empty line between two paragraphs would start a second list.
+ */
+function toggleLinePrefix(
+  view: EditorView,
+  present: RegExp,
+  marker: (indexWithinBlock: number) => string,
+): void {
+  const { state } = view;
+  const range = state.selection.main;
+  const first = state.doc.lineAt(range.from).number;
+  const last = state.doc.lineAt(range.to).number;
+
+  const lines = [];
+  for (let number = first; number <= last; number += 1) lines.push(state.doc.line(number));
+
+  const marked = lines.filter((line) => line.text.trim().length > 0);
+  const allMarked = marked.length > 0 && marked.every((line) => present.test(line.text));
+
+  const changes = lines.flatMap((line, index) => {
+    const existing = present.exec(line.text);
+    if (allMarked) {
+      return existing
+        ? [{ from: line.from, to: line.from + existing[0].length, insert: "" }]
+        : [];
+    }
+    if (line.text.trim().length === 0 && lines.length > 1) return [];
+    return [
+      {
+        from: line.from,
+        to: line.from + (existing?.[0].length ?? 0),
+        insert: marker(index),
+      },
+    ];
+  });
+
+  if (changes.length > 0) view.dispatch({ changes, scrollIntoView: true });
+  view.focus();
+}
+
+/**
  * The authoring blocks the pipeline understands.
  *
  * Each skeleton is well-formed on arrival — a `:::takeaways` already contains
@@ -234,6 +288,22 @@ export const INLINE_COMMANDS: EditorCommand[] = [
     run: (view) => wrap(view, "**", "**", "bold text"),
   },
   {
+    id: "italic",
+    label: "Italic",
+    title: "Italic",
+    icon: ItalicIcon,
+    key: "Mod-i",
+    run: (view) => wrap(view, "*", "*", "italic text"),
+  },
+  {
+    id: "code",
+    label: "Code",
+    title: "Inline code",
+    icon: CodeIcon,
+    key: "Mod-e",
+    run: (view) => wrap(view, "`", "`", "code"),
+  },
+  {
     id: "link",
     label: "Link",
     title: "Insert a link",
@@ -241,14 +311,84 @@ export const INLINE_COMMANDS: EditorCommand[] = [
     key: "Mod-k",
     run: insertLink,
   },
+];
+
+/**
+ * Block structure, as opposed to the pipeline's authoring blocks.
+ *
+ * Everything here has a markdown spelling an author could type by hand; the
+ * buttons only save the typing. That is why they are toggles — a second press
+ * undoes the first — rather than insertions that accumulate.
+ */
+export const STRUCTURE_COMMANDS: EditorCommand[] = [
   {
-    id: "heading",
-    label: "Heading",
+    id: "h2",
+    label: "Heading 2",
     title: "Toggle a level-2 heading on this line",
     icon: Heading2Icon,
     key: "Mod-Alt-2",
     run: (view) => toggleHeading(view, 2),
   },
+  {
+    id: "h3",
+    label: "Heading 3",
+    title: "Toggle a level-3 heading on this line",
+    icon: Heading3Icon,
+    key: "Mod-Alt-3",
+    run: (view) => toggleHeading(view, 3),
+  },
+  {
+    id: "bullets",
+    label: "Bulleted list",
+    title: "Toggle a bulleted list",
+    icon: ListIcon,
+    key: "Mod-Shift-8",
+    run: (view) => toggleLinePrefix(view, /^\s{0,3}[-*+]\s+/, () => "- "),
+  },
+  {
+    id: "numbers",
+    label: "Numbered list",
+    title: "Toggle a numbered list",
+    icon: ListOrderedIcon,
+    key: "Mod-Shift-7",
+    run: (view) => toggleLinePrefix(view, /^\s{0,3}\d+[.)]\s+/, (index) => `${index + 1}. `),
+  },
+  {
+    id: "quote",
+    label: "Quote",
+    title: "Toggle a block quote",
+    icon: QuoteIcon,
+    key: "Mod-Shift-.",
+    run: (view) => toggleLinePrefix(view, /^\s{0,3}>\s?/, () => "> "),
+  },
+  {
+    id: "codeblock",
+    label: "Code block",
+    title: "Fenced code block",
+    icon: SquareCodeIcon,
+    run: (view) => insertBlock(view, `\`\`\`${CARET}\n\n\`\`\``),
+  },
+  {
+    id: "rule",
+    label: "Divider",
+    title: "Horizontal rule",
+    icon: MinusIcon,
+    run: (view) => insertBlock(view, `---${CARET}`),
+  },
 ];
 
-export const ALL_COMMANDS: EditorCommand[] = [...INLINE_COMMANDS, ...BLOCK_COMMANDS];
+export const ALL_COMMANDS: EditorCommand[] = [
+  ...INLINE_COMMANDS,
+  ...STRUCTURE_COMMANDS,
+  ...BLOCK_COMMANDS,
+];
+
+/**
+ * What the slash menu offers.
+ *
+ * The inline marks are left out deliberately: `/bold` in the middle of a
+ * sentence is slower than typing the asterisks, and a menu of fifteen entries
+ * is one nobody reads. Everything here inserts a block, which is the case
+ * where the menu is genuinely faster than the syntax.
+ */
+export const SLASH_COMMANDS: EditorCommand[] = [...STRUCTURE_COMMANDS, ...BLOCK_COMMANDS];

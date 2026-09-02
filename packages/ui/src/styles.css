@@ -3,9 +3,30 @@
  *
  * Everything else belongs in `className`. This file exists so the focus ring
  * has exactly one definition — a ring that differs per component is a ring
- * people stop trusting — and so dense scrolling regions get a scrollbar that
- * does not eat a column of table.
+ * people stop trusting — so dense scrolling regions get a scrollbar that does
+ * not eat a column of table, and so rendered article HTML can be styled with
+ * ordinary descendant selectors rather than escaped arbitrary variants.
+ *
+ * The app imports this once, next to its own `globals.css`:
+ *
+ *   @import "tailwindcss";
+ *   @import "@cms/ui/styles.css";
+ *
+ * Without that import the classes below do not exist and the `@source` line
+ * never runs, which means every focus ring in the library is missing and none
+ * of the utilities used inside `@cms/ui` are generated at all.
  */
+
+/*
+ * Tell Tailwind where this package's class names live.
+ *
+ * Automatic source detection starts at the app that owns the CSS entry point
+ * and skips `node_modules` — and a workspace package is reached through a
+ * `node_modules` symlink, so every utility written inside `@cms/ui` is
+ * invisible to it. This registers the package's own sources explicitly,
+ * relative to this file, so the library styles itself wherever it is imported.
+ */
+@source "./";
 
 /*
  * `:focus-visible` rather than `:focus`, so a mouse click on a button does not
@@ -91,4 +112,432 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ========================================================================== *
+ * .ui-prose — rendered article HTML
+ *
+ * What the `Prose` component paints. The `cms-*` class names below are the
+ * content pipeline's published contract (see
+ * `packages/content/src/sanitize-schema.ts`); this stylesheet reads them and
+ * never rewrites them.
+ *
+ * Set for reading rather than for scanning: 14px on a ~68-character measure,
+ * loose leading, and vertical rhythm carried by margins that collapse between
+ * siblings rather than by a fixed gap on every element. The chrome around this
+ * is 13px and dense on purpose — the article is the one place in the studio
+ * that is allowed to breathe.
+ * ========================================================================== */
+
+.ui-prose {
+  color: var(--color-ink);
+  font-size: var(--text-base);
+  line-height: 1.7;
+  /* Long-form text past ~75 characters costs the reader the return sweep. */
+  max-width: 68ch;
+}
+
+.ui-prose > :first-child {
+  margin-top: 0;
+}
+
+.ui-prose > :last-child {
+  margin-bottom: 0;
+}
+
+/* ---- headings ---------------------------------------------------------- */
+
+.ui-prose :is(h1, h2, h3, h4, h5, h6) {
+  color: var(--color-ink);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  /* Tie a heading to what follows it, not to what precedes it. */
+  margin-block: 1.9em 0.5em;
+  line-height: 1.25;
+  /* So an anchor jump does not land the heading flush against the viewport
+     edge inside a scrolling preview pane. */
+  scroll-margin-top: 1.5rem;
+}
+
+.ui-prose h1 {
+  font-size: var(--text-xl);
+  letter-spacing: var(--tracking-tighter);
+}
+
+.ui-prose h2 {
+  font-size: var(--text-lg);
+}
+
+.ui-prose h3 {
+  font-size: var(--text-md);
+}
+
+.ui-prose :is(h4, h5, h6) {
+  font-size: var(--text-base);
+}
+
+/*
+ * `rehype-autolink-headings` appends this to every heading. It is aria-hidden
+ * and `tabindex="-1"`, so it is decoration for mouse users only — which means
+ * it must not take up space or pull the eye until the heading is hovered.
+ */
+.ui-prose .cms-anchor-link {
+  color: var(--color-ink-faint);
+  margin-left: 0.35em;
+  opacity: 0;
+  text-decoration: none;
+  transition: opacity 100ms ease-out;
+}
+
+.ui-prose .cms-anchor-link::after {
+  content: "#";
+}
+
+.ui-prose :is(h1, h2, h3, h4, h5, h6):hover .cms-anchor-link,
+.ui-prose .cms-anchor-link:focus-visible {
+  opacity: 1;
+}
+
+/* ---- body -------------------------------------------------------------- */
+
+.ui-prose p {
+  margin-block: 0.85em;
+}
+
+.ui-prose :is(ul, ol) {
+  margin-block: 0.85em;
+  padding-left: 1.4em;
+}
+
+.ui-prose ul {
+  list-style: disc;
+}
+
+.ui-prose ol {
+  list-style: decimal;
+}
+
+.ui-prose li {
+  margin-block: 0.3em;
+}
+
+.ui-prose li::marker {
+  color: var(--color-ink-faint);
+}
+
+/*
+ * Links are underlined, permanently and without apology.
+ *
+ * `--color-accent` is the same value as `--color-ink` in this system, so there
+ * is no colour left to mark a link with. The underline is not decoration here,
+ * it is the entire affordance.
+ */
+.ui-prose a {
+  color: var(--color-ink);
+  text-decoration: underline;
+  /* `--color-ink-faint` fails 3:1 in dark, and the underline is the only
+     thing marking a link when the accent colour is the body colour. */
+  text-decoration-color: var(--color-ink-muted);
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: from-font;
+}
+
+.ui-prose a:hover {
+  text-decoration-color: var(--color-ink);
+}
+
+.ui-prose strong {
+  color: var(--color-ink);
+  font-weight: 650;
+}
+
+.ui-prose blockquote {
+  border-left: 2px solid var(--color-border-strong);
+  color: var(--color-ink-secondary);
+  font-style: italic;
+  margin-block: 1.2em;
+  padding-left: 1em;
+}
+
+.ui-prose hr {
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  margin-block: 2.4em;
+}
+
+.ui-prose :not(pre) > code {
+  background: var(--color-muted);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  padding: 0.15em 0.35em;
+}
+
+.ui-prose pre {
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  margin-block: 1.2em;
+  overflow-x: auto;
+  padding: 0.85rem 1rem;
+}
+
+.ui-prose pre code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+}
+
+/* ---- tables ------------------------------------------------------------ */
+
+.ui-prose table {
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  margin-block: 1.4em;
+  width: 100%;
+}
+
+.ui-prose th {
+  border-bottom: 1px solid var(--color-border-strong);
+  color: var(--color-ink-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 0.4rem 0.6rem 0.4rem 0;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.ui-prose td {
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.5rem 0.6rem 0.5rem 0;
+  vertical-align: top;
+}
+
+.ui-prose :is(th, td):last-child {
+  padding-right: 0;
+}
+
+/* ---- figures ----------------------------------------------------------- */
+
+.ui-prose :is(img, video) {
+  border-radius: var(--radius);
+  height: auto;
+  max-width: 100%;
+}
+
+.ui-prose .cms-figure {
+  margin-block: 1.6em;
+}
+
+.ui-prose .cms-figure img {
+  display: block;
+  width: 100%;
+}
+
+.ui-prose figcaption {
+  color: var(--color-ink-muted);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  margin-top: 0.6em;
+  /* A rule on the caption side reads as "this belongs to the picture above"
+     without needing a box around the whole figure. */
+  padding-left: 0.75em;
+  border-left: 2px solid var(--color-border);
+}
+
+/* ---- the authoring blocks ---------------------------------------------- *
+ *
+ * Four blocks, four silhouettes. There is no hue to tell a summary from a
+ * checklist from a Q&A, so each gets a different edge: a heavy left rule, a
+ * ruled list, a divided stack, a numbered stack.
+ */
+
+/* :::tldr — the summary an answer engine reads aloud. The heaviest rule in
+   the article, because it is the one block that outranks the prose. */
+.ui-prose .cms-tldr {
+  background: var(--color-surface-sunken);
+  border-left: 3px solid var(--color-ink);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: var(--text-sm);
+  margin-block: 1.6em;
+  padding: 0.85rem 1rem;
+}
+
+.ui-prose .cms-tldr > :first-child {
+  margin-top: 0;
+}
+
+.ui-prose .cms-tldr > :last-child {
+  margin-bottom: 0;
+}
+
+/* Emitted as a bare `<ul class="cms-takeaways">`, so the block *is* the list. */
+.ui-prose .cms-takeaways {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  list-style: none;
+  margin-block: 1.6em;
+  padding: 0.5rem 1rem;
+}
+
+.ui-prose .cms-takeaways li {
+  font-size: var(--text-sm);
+  margin: 0;
+  padding: 0.5rem 0 0.5rem 1.4rem;
+  position: relative;
+}
+
+.ui-prose .cms-takeaways li + li {
+  border-top: 1px solid var(--color-border);
+}
+
+/* A dash rather than a tick: these are points, not completed tasks. */
+.ui-prose .cms-takeaways li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 1.15em;
+  width: 0.7rem;
+  height: 2px;
+  background: var(--color-ink-faint);
+}
+
+/* :::faq — a stack of question/answer pairs. */
+.ui-prose .cms-faq,
+.ui-prose .cms-howto {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  margin-block: 1.6em;
+  padding: 0.25rem 1rem 0.75rem;
+}
+
+.ui-prose .cms-faq__item + .cms-faq__item {
+  border-top: 1px solid var(--color-border);
+  margin-top: 0.75rem;
+  padding-top: 0.25rem;
+}
+
+.ui-prose .cms-faq__question {
+  font-size: var(--text-base);
+  font-weight: 600;
+  letter-spacing: normal;
+  margin-block: 0.9em 0.35em;
+}
+
+.ui-prose .cms-faq__answer {
+  color: var(--color-ink-secondary);
+  font-size: var(--text-sm);
+}
+
+.ui-prose .cms-faq__answer > :last-child {
+  margin-bottom: 0.6em;
+}
+
+/* :::howto — named, numbered steps. The number is the whole affordance, so it
+   gets a puck of its own rather than a list marker. */
+.ui-prose .cms-howto__name {
+  font-size: var(--text-md);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  margin-block: 0.8em 0.4em;
+}
+
+.ui-prose .cms-howto__steps {
+  counter-reset: cms-step;
+  list-style: none;
+  margin-block: 0.6em;
+  padding-left: 0;
+}
+
+.ui-prose .cms-howto__step {
+  counter-increment: cms-step;
+  font-size: var(--text-sm);
+  margin: 0;
+  padding: 0.55rem 0 0.55rem 2.1rem;
+  position: relative;
+}
+
+.ui-prose .cms-howto__step + .cms-howto__step {
+  border-top: 1px solid var(--color-border);
+}
+
+.ui-prose .cms-howto__step::before {
+  content: counter(cms-step);
+  position: absolute;
+  left: 0;
+  top: 0.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 9999px;
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-prose .cms-howto__step > :first-child {
+  margin-top: 0;
+}
+
+.ui-prose .cms-howto__step > :last-child {
+  margin-bottom: 0;
+}
+
+/* ::embed — a poster image with a play button drawn over it. */
+.ui-prose .cms-embed {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  margin-block: 1.6em;
+  overflow: hidden;
+  position: relative;
+}
+
+.ui-prose .cms-embed__poster {
+  border-radius: 0;
+  display: block;
+  width: 100%;
+}
+
+.ui-prose .cms-embed__play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  color: var(--grey-0);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  /* The label has to stay legible over an image nobody has seen yet, so it
+     rides its own scrim rather than trusting the poster. */
+  background: linear-gradient(
+    to top,
+    oklch(0 0 0 / 0.75) 0%,
+    oklch(0 0 0 / 0.35) 45%,
+    oklch(0 0 0 / 0) 100%
+  );
+}
+
+.ui-prose .cms-embed__play:focus-visible {
+  outline: 2px solid var(--grey-0);
+  outline-offset: -4px;
+}
+
+/* An embed nobody could resolve degrades to a plain link. It should look like
+   a stated fallback rather than like a broken player. */
+.ui-prose .cms-embed--plain {
+  background: var(--color-surface-sunken);
+  font-size: var(--text-sm);
+  padding: 0.75rem 1rem;
 }
