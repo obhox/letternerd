@@ -1,0 +1,65 @@
+# Coolify deployment.
+#
+# Postgres is NOT here. It is a Coolify-managed database resource in the same
+# project, which is how every other service on this server is set up and which
+# gets scheduled backups without anyone remembering to configure them. Point
+# DATABASE_URL at its internal connection string.
+#
+# Images are built and pushed by GitHub Actions, never built on the server.
+# CMS_IMAGE_TAG defaults to `latest`; setting it to a commit SHA is the rollback
+# mechanism — an older SHA is a redeploy away with no rebuild.
+
+services:
+  # Runs to completion before the studio starts, so no process ever queries a
+  # schema that does not exist yet. The migrator takes a Postgres advisory lock,
+  # which covers the other half: two simultaneous deploys both running this.
+  migrate:
+    image: ${CMS_IMAGE_PREFIX:-ghcr.io/obhox/cms}-db:${CMS_IMAGE_TAG:-latest}
+    pull_policy: always
+    restart: "no"
+    command: ["node_modules/.bin/tsx", "src/migrate.ts"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+
+  studio:
+    image: ${CMS_IMAGE_PREFIX:-ghcr.io/obhox/cms}-studio:${CMS_IMAGE_TAG:-latest}
+    # Load-bearing when running the `latest` tag: without it a redeploy reuses
+    # the cached image and silently changes nothing.
+    pull_policy: always
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      # Coolify substitutes this and wires Traefik to the service.
+      SERVICE_FQDN_STUDIO_3000: /
+      PORT: 3000
+      NODE_ENV: production
+
+      DATABASE_URL: ${DATABASE_URL}
+
+      BETTER_AUTH_SECRET: ${SERVICE_BASE64_64_AUTH}
+      CMS_STUDIO_URL: ${SERVICE_FQDN_STUDIO}
+      CMS_TRUSTED_ORIGINS: ${CMS_TRUSTED_ORIGINS}
+      CRON_SECRET: ${SERVICE_PASSWORD_CRON}
+
+      MEDIA_STORAGE_DRIVER: ${MEDIA_STORAGE_DRIVER:-s3}
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      S3_REGION: ${S3_REGION:-auto}
+      S3_BUCKET: ${S3_BUCKET}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+      MEDIA_CDN_URL: ${MEDIA_CDN_URL}
+      MEDIA_MAX_UPLOAD_BYTES: ${MEDIA_MAX_UPLOAD_BYTES:-26214400}
+
+      WEBHOOK_SIGNING_KEY: ${SERVICE_PASSWORD_WEBHOOK}
+      CRAWLER_IP_SALT: ${SERVICE_PASSWORD_CRAWLERSALT}
+
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      EMAIL_FROM: ${EMAIL_FROM}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+
+      NEXT_PUBLIC_CMS_STUDIO_URL: ${SERVICE_FQDN_STUDIO}
+      NEXT_PUBLIC_MEDIA_CDN_URL: ${MEDIA_CDN_URL}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully

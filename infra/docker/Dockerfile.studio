@@ -1,0 +1,87 @@
+# The studio: admin UI, REST API and the remote MCP endpoint, in one image.
+#
+# Debian slim rather than Alpine, which is the one real departure from the
+# Falorb recipe this is otherwise copied from. sharp's prebuilt binaries target
+# glibc; the musl builds pull a different libvips and fail at runtime in ways
+# that only show up when someone uploads an image. An image a few tens of
+# megabytes larger is a good trade for an upload path that works.
+
+ARG NODE_VERSION=22-slim
+
+# --- dependencies -------------------------------------------------------------
+FROM node:${NODE_VERSION} AS deps
+RUN corepack enable
+WORKDIR /repo
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.base.json ./
+
+# Every workspace package that has dependencies of its own needs its manifest
+# copied here, not just the ones apps/studio imports directly: pnpm reads each
+# package.json to learn what *that* package depends on, and a package whose
+# manifest is missing at install time is invisible — its dependencies are never
+# linked, and an import from inside its own source fails the build with
+# "Module not found". Add a line here whenever a package gains its first
+# dependency.
+COPY packages/core/package.json    packages/core/
+COPY packages/db/package.json      packages/db/
+COPY packages/auth/package.json    packages/auth/
+COPY packages/content/package.json packages/content/
+COPY packages/seo/package.json     packages/seo/
+COPY packages/media/package.json   packages/media/
+COPY packages/ui/package.json      packages/ui/
+COPY packages/sdk/package.json     packages/sdk/
+COPY apps/studio/package.json      apps/studio/
+
+RUN pnpm install --frozen-lockfile
+
+# --- build --------------------------------------------------------------------
+FROM deps AS build
+WORKDIR /repo
+COPY . .
+
+ENV NEXT_TELEMETRY_DISABLED=1 \
+    # @cms/auth throws at import time under NODE_ENV=production when no mail
+    # provider is configured, and `next build` evaluates it while collecting
+    # page data. RESEND_API_KEY is a runtime service variable, not a build
+    # argument — passing a real key here would bake a secret into the image.
+    # This asserts production's own default rather than disabling it, and it
+    # exists only in this stage; the runtime image below never sees it, so the
+    # container evaluates the real rule against the real key.
+    CMS_REQUIRE_EMAIL_VERIFICATION=true
+
+# transpilePackages compiles the workspace packages from source, so the build
+# needs the whole tree above rather than a pruned copy.
+RUN pnpm --filter @cms/studio build
+
+# The workspace ships whole, dev dependencies included. Both ways of slimming it
+# break this app. `pnpm deploy` into a pruned directory re-roots node_modules,
+# and Next's build emits hashed references to its serverExternalPackages
+# (postgres, pg, better-auth, sharp) that only resolve against the layout the
+# build saw. Pruning in place is the same re-rooting by another name. Size is
+# the price of an app that starts.
+
+# --- runtime ------------------------------------------------------------------
+FROM node:${NODE_VERSION} AS runtime
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PORT=3000 \
+    # Next binds this; the default is loopback in some versions, which the
+    # reverse proxy cannot reach from another container.
+    HOSTNAME=0.0.0.0
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends tini curl ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+RUN groupadd -r cms && useradd -r -g cms cms
+WORKDIR /repo/apps/studio
+
+# The workspace as the build left it: same paths, same symlinks, plus .next.
+COPY --from=build --chown=cms:cms /repo /repo
+
+USER cms
+EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD curl -fsS http://127.0.0.1:3000/api/health || exit 1
+ENTRYPOINT ["/usr/bin/tini", "--"]
+# The local binary rather than `pnpm start`: there is no pnpm in this stage.
+CMD ["node_modules/.bin/next", "start", "--port", "3000"]

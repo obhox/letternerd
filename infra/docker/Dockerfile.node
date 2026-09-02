@@ -1,0 +1,39 @@
+# Plain Node runner for workspace scripts — migrations today, a background
+# worker later. Alpine is fine here because nothing in this image touches sharp.
+#
+# Unlike the studio image this one *can* be pruned: it runs tsx against a
+# package's source and has no bundler output whose module resolution depends on
+# the original layout.
+
+ARG NODE_VERSION=22-alpine
+ARG APP=@cms/db
+
+FROM node:${NODE_VERSION} AS deps
+RUN corepack enable
+WORKDIR /repo
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.base.json ./
+COPY packages/core/package.json    packages/core/
+COPY packages/db/package.json      packages/db/
+COPY packages/auth/package.json    packages/auth/
+COPY packages/content/package.json packages/content/
+COPY packages/seo/package.json     packages/seo/
+COPY packages/media/package.json   packages/media/
+RUN pnpm install --frozen-lockfile
+
+FROM deps AS build
+WORKDIR /repo
+COPY . .
+ARG APP
+RUN pnpm deploy --legacy --filter "${APP}" --prod /out
+
+FROM node:${NODE_VERSION} AS runtime
+ENV NODE_ENV=production
+RUN apk add --no-cache tini
+RUN addgroup -S cms && adduser -S cms -G cms
+WORKDIR /app
+COPY --from=build --chown=cms:cms /out /app
+USER cms
+ENTRYPOINT ["/sbin/tini", "--"]
+# Overridden per service; the migrate service runs `tsx src/migrate.ts`.
+CMD ["node", "--version"]
