@@ -88,8 +88,11 @@ export function countDocument(markdown: string): DocumentCounts {
     .replace(/^\s{0,3}(```|~~~)[\s\S]*?^\s{0,3}\1\s*$/gm, "")
     // Directive fences and leaf directives.
     .replace(/^\s{0,3}:{2,3}.*$/gm, "")
-    // Image and link targets: the label counts, the URL does not.
-    .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")
+    // An image counts for nothing: neither its target nor its alt text is
+    // prose a reader reads, and the pipeline's own `wordCount` excludes both.
+    // The two numbers on this screen have to agree.
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+    // A link's label is prose; its target is not.
     .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
     // Leading block markers.
     .replace(/^\s{0,3}([#>]+|[-*+]|\d+[.)])\s+/gm, "")

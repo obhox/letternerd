@@ -544,17 +544,27 @@ export function PostEditor({ site, post, canPublish, descriptionRange }: PostEdi
             aria-label="Inspector"
             className="ui-scroll flex w-full shrink-0 flex-col gap-3 overflow-auto xl:h-full xl:w-80"
           >
+            {/*
+              `shrink-0` on all three.
+
+              The rail is a flex column that scrolls, and without it the three
+              panels are compressed to fit its height instead of overflowing
+              it — which silently clips the checks list, the very thing an
+              author is looking at when a publish has just been refused.
+            */}
             <LintPanel
               findings={findings}
               checked={preview.checked}
               pending={preview.pending}
               onGoToLine={goToLine}
+              className="shrink-0"
             />
 
             <OutlinePanel
               source={outline}
               rendered={preview.payload?.headings ?? []}
               onGoToLine={goToLine}
+              className="shrink-0"
             />
 
             <SeoPanel
@@ -563,6 +573,7 @@ export function PostEditor({ site, post, canPublish, descriptionRange }: PostEdi
               onChange={patch}
               descriptionRange={descriptionRange}
               qaBlocks={preview.payload?.qaBlocks ?? []}
+              className="shrink-0"
             />
           </aside>
         )}

@@ -127,55 +127,78 @@ export function useScrollSync({
   useEffect(() => {
     if (!enabled) return;
 
-    const editor = editorRef.current;
-    const preview = previewRef.current;
-    const scroller = editor?.scrollElement();
-    if (!editor || !preview || !scroller) return;
-
     /** Timestamps until which each pane's own scroll events are not the driver. */
     const suppressed = { editor: 0, preview: 0 };
     let frame = 0;
+    let retry = 0;
+    let detach: (() => void) | null = null;
 
-    const schedule = (run: () => void) => {
-      if (frame !== 0) return;
-      frame = requestAnimationFrame(() => {
-        frame = 0;
-        run();
-      });
+    /**
+     * Attach once both panes exist, and keep looking until they do.
+     *
+     * The refs are filled during the same commit that runs this effect, so
+     * they are normally ready on the first attempt. "Normally" is not good
+     * enough for a feature that fails silently: a single early return would
+     * leave the panes permanently unsynced with nothing on screen to say so,
+     * and no dependency in this effect would ever change to try again.
+     */
+    const attach = () => {
+      const editor = editorRef.current;
+      const preview = previewRef.current;
+      const scroller = editor?.scrollElement();
+      if (!editor || !preview || !scroller) {
+        retry = window.setTimeout(attach, 150);
+        return;
+      }
+
+      const schedule = (run: () => void) => {
+        if (frame !== 0) return;
+        frame = requestAnimationFrame(() => {
+          frame = 0;
+          run();
+        });
+      };
+
+      const onEditorScroll = () => {
+        if (performance.now() < suppressed.editor) return;
+        schedule(() => {
+          const line = editor.topVisibleLine();
+          if (line === null) return;
+          const anchors = buildAnchors(preview, headingsRef.current, lineCountRef.current);
+          const top = interpolate(anchors, line, "line");
+          // Nothing to do if it is already there; an assignment would still
+          // cost a scroll event and a suppression window.
+          if (Math.abs(preview.scrollTop - top) < 2) return;
+          suppressed.preview = performance.now() + SUPPRESS_MS;
+          preview.scrollTop = top;
+        });
+      };
+
+      const onPreviewScroll = () => {
+        if (performance.now() < suppressed.preview) return;
+        schedule(() => {
+          const anchors = buildAnchors(preview, headingsRef.current, lineCountRef.current);
+          const line = Math.round(interpolate(anchors, preview.scrollTop, "top"));
+          suppressed.editor = performance.now() + SUPPRESS_MS;
+          editor.scrollLineToTop(line);
+        });
+      };
+
+      scroller.addEventListener("scroll", onEditorScroll, { passive: true });
+      preview.addEventListener("scroll", onPreviewScroll, { passive: true });
+
+      detach = () => {
+        scroller.removeEventListener("scroll", onEditorScroll);
+        preview.removeEventListener("scroll", onPreviewScroll);
+      };
     };
 
-    const onEditorScroll = () => {
-      if (performance.now() < suppressed.editor) return;
-      schedule(() => {
-        const line = editor.topVisibleLine();
-        if (line === null) return;
-        const anchors = buildAnchors(preview, headingsRef.current, lineCountRef.current);
-        const top = interpolate(anchors, line, "line");
-        // Nothing to do if it is already there; an assignment would still cost
-        // a scroll event and a suppression window.
-        if (Math.abs(preview.scrollTop - top) < 2) return;
-        suppressed.preview = performance.now() + SUPPRESS_MS;
-        preview.scrollTop = top;
-      });
-    };
-
-    const onPreviewScroll = () => {
-      if (performance.now() < suppressed.preview) return;
-      schedule(() => {
-        const anchors = buildAnchors(preview, headingsRef.current, lineCountRef.current);
-        const line = Math.round(interpolate(anchors, preview.scrollTop, "top"));
-        suppressed.editor = performance.now() + SUPPRESS_MS;
-        editor.scrollLineToTop(line);
-      });
-    };
-
-    scroller.addEventListener("scroll", onEditorScroll, { passive: true });
-    preview.addEventListener("scroll", onPreviewScroll, { passive: true });
+    attach();
 
     return () => {
+      window.clearTimeout(retry);
       if (frame !== 0) cancelAnimationFrame(frame);
-      scroller.removeEventListener("scroll", onEditorScroll);
-      preview.removeEventListener("scroll", onPreviewScroll);
+      detach?.();
     };
   }, [enabled, editorRef, previewRef]);
 }

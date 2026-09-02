@@ -273,7 +273,7 @@ const decorationTheme = EditorView.theme({
     fontFamily: "var(--font-mono)",
     fontSize: "0.88em",
     color: "var(--color-ink-secondary)",
-    backgroundColor: "var(--color-muted)",
+    backgroundColor: "color-mix(in oklch, var(--color-muted) 55%, transparent)",
     borderRadius: "var(--radius-sm)",
   },
 

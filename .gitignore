@@ -19,3 +19,6 @@ infra/.data/
 
 # Next loads dotenv from the app dir, not the repo root; this is a symlink to ../../.env
 apps/studio/.env
+
+# timestamped .env backups taken before config edits
+.env.backup-*

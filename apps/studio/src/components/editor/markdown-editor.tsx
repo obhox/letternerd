@@ -654,9 +654,25 @@ export function MarkdownEditor({
             if (converted && converted !== text.trim()) {
               event.preventDefault();
               const range = view.state.selection.main;
+
+              /*
+               * Block markdown has to start a line.
+               *
+               * Pasting an article at the end of a sentence would otherwise
+               * produce `…out properly.## Pasted heading`, which is not a
+               * heading at all — it is a paragraph with hashes in it. Anything
+               * multi-line is block content, so it gets a blank line above it
+               * when the caret is mid-line, exactly as the toolbar's own block
+               * insertions do.
+               */
+              const line = view.state.doc.lineAt(range.from);
+              const midLine = range.from > line.from;
+              const lead = converted.includes("\n") && midLine ? "\n\n" : "";
+              const insert = `${lead}${converted}`;
+
               view.dispatch({
-                changes: { from: range.from, to: range.to, insert: converted },
-                selection: EditorSelection.cursor(range.from + converted.length),
+                changes: { from: range.from, to: range.to, insert },
+                selection: EditorSelection.cursor(range.from + insert.length),
                 scrollIntoView: true,
                 userEvent: "input.paste",
               });
@@ -912,25 +928,31 @@ export function MarkdownEditor({
 
       {shortcutsOpen && <ShortcutSheet onClose={() => setShortcutsOpen(false)} />}
 
-      <footer className="flex h-8 shrink-0 items-center gap-3 border-t border-[var(--color-border)] px-3 text-2xs text-[var(--color-ink-muted)]">
+      <footer className="flex h-8 shrink-0 items-center gap-2 overflow-hidden border-t border-[var(--color-border)] px-3 text-2xs whitespace-nowrap text-[var(--color-ink-muted)]">
         <span className="tabular-nums">
           {counts.words.toLocaleString()} {counts.words === 1 ? "word" : "words"}
         </span>
-        <span aria-hidden="true">·</span>
-        <span className="tabular-nums">{counts.characters.toLocaleString()} characters</span>
-        <span aria-hidden="true">·</span>
-        <span className="tabular-nums">{counts.readingMinutes} min read</span>
+        {/* The first thing to go when the pane is narrow: a character count is
+            the least useful of the three, and a wrapping status bar would
+            change the height of the pane above it. */}
+        <span className="hidden tabular-nums sm:inline">
+          · {counts.characters.toLocaleString()} characters
+        </span>
+        <span className="tabular-nums">· {counts.readingMinutes} min read</span>
 
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          {/* The label does not change with the state — a footer control that
+              renames itself shifts everything beside it. The pressed state is
+              carried by `aria-pressed` and by the filled variant. */}
           <Button
             size="sm"
-            variant="ghost"
+            variant={showGutter ? "secondary" : "ghost"}
             aria-pressed={showGutter}
-            title="Show line numbers, to match the line a check reports"
+            title="Line numbers, to find the line a check reports"
             onClick={() => setShowGutter((on) => !on)}
           >
             <HashIcon aria-hidden="true" />
-            {showGutter ? "Line numbers on" : "Line numbers"}
+            Line numbers
           </Button>
           <Button
             size="sm"
