@@ -1,0 +1,168 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renderDocument > matches the recorded output > headings 1`] = `
+[
+  {
+    "aliases": [],
+    "depth": 2,
+    "id": "why-categories-drift",
+    "text": "Why categories drift",
+  },
+  {
+    "aliases": [],
+    "depth": 3,
+    "id": "mapping-to-the-ledger",
+    "text": "Mapping to the ledger",
+  },
+  {
+    "aliases": [],
+    "depth": 3,
+    "id": "can-i-rename-a-category-later",
+    "text": "Can I rename a category later?",
+  },
+  {
+    "aliases": [],
+    "depth": 3,
+    "id": "what-happens-to-unmapped-spend",
+    "text": "What happens to unmapped spend?",
+  },
+]
+`;
+
+exports[`renderDocument > matches the recorded output > html 1`] = `
+"<div class="cms-tldr"><p>Expense categories should mirror your chart of accounts, not your team's habits.</p></div>
+<ul class="cms-takeaways"><li>Map every category to a general-ledger code before you invite anyone.</li><li>Rename categories in the CMS, never in the accounting system.</li><li>Review unmapped spend once a month.</li></ul>
+<h2 id="why-categories-drift">Why categories drift<a class="cms-anchor-link" aria-hidden="true" tabindex="-1" href="#why-categories-drift"><span class="icon icon-link"></span></a></h2>
+<p>Teams invent categories faster than finance can reconcile them. A category that
+exists only in the expense tool is a category the ledger cannot see, and the
+month-end difference has to be explained by hand.</p>
+<figure class="cms-figure"><img src="https://cdn.spendtab.com/asset-chart/1600.webp" alt="Monthly recurring revenue" width="1600" height="900" loading="lazy" decoding="async" srcset="https://cdn.spendtab.com/asset-chart/320.webp 320w, https://cdn.spendtab.com/asset-chart/640.webp 640w, https://cdn.spendtab.com/asset-chart/1600.webp 1600w" sizes="(max-width: 720px) 100vw, 720px" data-blurhash="LEHV6nWB2yk8pyo0adR*"><figcaption>MRR, January to December.</figcaption></figure>
+<p>Read the <a href="/pricing">pricing page</a> or the <a href="./chart-of-accounts">previous post</a>.</p>
+<h3 id="mapping-to-the-ledger">Mapping to the ledger<a class="cms-anchor-link" aria-hidden="true" tabindex="-1" href="#mapping-to-the-ledger"><span class="icon icon-link"></span></a></h3>
+<p>Every category carries a general-ledger code. Set it once.</p>
+<pre style="background-color:#fff;--shiki-dark-bg:#24292e;color:#24292e;--shiki-dark:#e1e4e8"><code><span><span style="color:#D73A49;--shiki-dark:#F97583">const</span><span style="color:#005CC5;--shiki-dark:#79B8FF"> category</span><span style="color:#D73A49;--shiki-dark:#F97583"> =</span><span style="color:#24292E;--shiki-dark:#E1E4E8"> { name: </span><span style="color:#032F62;--shiki-dark:#9ECBFF">"Software"</span><span style="color:#24292E;--shiki-dark:#E1E4E8">, ledgerCode: </span><span style="color:#032F62;--shiki-dark:#9ECBFF">"6820"</span><span style="color:#24292E;--shiki-dark:#E1E4E8"> };</span></span></code></pre>
+<section class="cms-faq"><div class="cms-faq__item">
+<h3 class="cms-faq__question" data-cms-qa="0" id="can-i-rename-a-category-later">Can I rename a category later?<a class="cms-anchor-link" aria-hidden="true" tabindex="-1" href="#can-i-rename-a-category-later"><span class="icon icon-link"></span></a></h3>
+<div class="cms-faq__answer" data-cms-qa="0">
+<p>Yes. Renaming a category does not change its ledger code, so historical
+reports stay correct.</p>
+</div>
+</div><div class="cms-faq__item">
+<h3 class="cms-faq__question" data-cms-qa="1" id="what-happens-to-unmapped-spend">What happens to unmapped spend?<a class="cms-anchor-link" aria-hidden="true" tabindex="-1" href="#what-happens-to-unmapped-spend"><span class="icon icon-link"></span></a></h3>
+<div class="cms-faq__answer" data-cms-qa="1">
+<p>It lands in a suspense category and appears in the monthly review until
+somebody assigns it a code.</p>
+</div>
+</div></section>
+<section class="cms-howto"><p class="cms-howto__name">Set up your first category</p><ol class="cms-howto__steps">
+<li class="cms-howto__step" data-step="1">Open Settings, then Categories.</li>
+<li class="cms-howto__step" data-step="2">Enter a name and a general-ledger code.</li>
+<li class="cms-howto__step" data-step="3">Invite your team once every code is mapped.</li>
+</ol></section>
+<div class="cms-embed" data-provider="youtube" data-embed-id="dQw4w9WgXcQ" data-embed-url="https://www.youtube.com/watch?v=dQw4w9WgXcQ"><img class="cms-embed__poster" src="https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg" alt="" width="480" height="360" loading="lazy" decoding="async"><button class="cms-embed__play" type="button" aria-label="Play video">Play video</button></div>"
+`;
+
+exports[`renderDocument > matches the recorded output > mdPublic 1`] = `
+"---
+title: How to structure expense categories that finance will accept
+description: >-
+  Expense categories drift the moment a team invents one. Map every category to
+  a general-ledger code first, and month-end stops being a negotiation.
+canonical: 'https://spendtab.com/blog/expense-categories'
+datePublished: '2026-01-14'
+---
+## TL;DR
+
+Expense categories should mirror your chart of accounts, not your team's habits.
+
+## Key takeaways
+
+- Map every category to a general-ledger code before you invite anyone.
+- Rename categories in the CMS, never in the accounting system.
+- Review unmapped spend once a month.
+
+## Why categories drift
+
+Teams invent categories faster than finance can reconcile them. A category that
+exists only in the expense tool is a category the ledger cannot see, and the
+month-end difference has to be explained by hand.
+
+![Monthly recurring revenue](https://cdn.spendtab.com/asset-chart/1600.webp)
+
+Read the [pricing page](https://spendtab.com/pricing) or the [previous post](https://spendtab.com/blog/chart-of-accounts).
+
+### Mapping to the ledger
+
+Every category carries a general-ledger code. Set it once.
+
+\`\`\`ts
+const category = { name: "Software", ledgerCode: "6820" };
+\`\`\`
+
+## FAQ
+
+### Can I rename a category later?
+
+Yes. Renaming a category does not change its ledger code, so historical
+reports stay correct.
+
+### What happens to unmapped spend?
+
+It lands in a suspense category and appears in the monthly review until
+somebody assigns it a code.
+
+## Set up your first category
+
+1. Open Settings, then Categories.
+2. Enter a name and a general-ledger code.
+3. Invite your team once every code is mapped.
+
+<https://www.youtube.com/watch?v=dQw4w9WgXcQ>
+"
+`;
+
+exports[`renderDocument > matches the recorded output > text 1`] = `
+"Expense categories should mirror your chart of accounts, not your team's habits.
+
+Map every category to a general-ledger code before you invite anyone.
+
+Rename categories in the CMS, never in the accounting system.
+
+Review unmapped spend once a month.
+
+Why categories drift
+
+Teams invent categories faster than finance can reconcile them. A category that
+exists only in the expense tool is a category the ledger cannot see, and the
+month-end difference has to be explained by hand.
+
+MRR, January to December.
+
+Read the pricing page or the previous post.
+
+Mapping to the ledger
+
+Every category carries a general-ledger code. Set it once.
+
+const category = { name: "Software", ledgerCode: "6820" };
+
+Can I rename a category later?
+
+Yes. Renaming a category does not change its ledger code, so historical
+reports stay correct.
+
+What happens to unmapped spend?
+
+It lands in a suspense category and appears in the monthly review until
+somebody assigns it a code.
+
+Set up your first category
+
+Open Settings, then Categories.
+
+Enter a name and a general-ledger code.
+
+Invite your team once every code is mapped.
+
+Play video"
+`;
