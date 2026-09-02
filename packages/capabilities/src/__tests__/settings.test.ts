@@ -120,7 +120,17 @@ function capability(name: string) {
   return found;
 }
 
-async function run(name: string, input: unknown, fake: FakeDb, actor: Actor = OWNER) {
+/**
+ * Deliberately typed as `unknown`. The registry is heterogeneous, so `invoke`
+ * returns a union of every capability's output; each test says which shape it
+ * expects rather than the helper guessing.
+ */
+async function run(
+  name: string,
+  input: unknown,
+  fake: FakeDb,
+  actor: Actor = OWNER,
+): Promise<unknown> {
   return capability(name).invoke(input, { actor, services: servicesOf(fake) });
 }
 

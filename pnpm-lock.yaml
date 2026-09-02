@@ -21,6 +21,40 @@ importers:
         specifier: ^3.0.5
         version: 3.2.7(@types/debug@4.1.13)(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.13)
 
+  apps/mcp-stdio:
+    dependencies:
+      '@cms/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@cms/capabilities':
+        specifier: workspace:*
+        version: link:../../packages/capabilities
+      '@cms/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@cms/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@cms/media':
+        specifier: workspace:*
+        version: link:../../packages/media
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.30.0
+        version: 1.30.0(zod@3.25.76)
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
+    devDependencies:
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.13
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.5
+        version: 3.2.7(@types/debug@4.1.13)(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.13)
+
   apps/studio:
     dependencies:
       '@cms/analytics':
@@ -50,9 +84,18 @@ importers:
       '@cms/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@codemirror/autocomplete':
+        specifier: ^6.18.4
+        version: 6.20.3
+      '@codemirror/commands':
+        specifier: ^6.8.0
+        version: 6.11.0
       '@codemirror/lang-markdown':
         specifier: ^6.3.2
         version: 6.5.2
+      '@codemirror/language':
+        specifier: ^6.10.8
+        version: 6.12.4
       '@codemirror/language-data':
         specifier: ^6.5.1
         version: 6.5.2
@@ -597,6 +640,9 @@ packages:
 
   '@codemirror/autocomplete@6.20.3':
     resolution: {integrity: sha512-tlosUqb+3BbxCxZdu4tKeRghPFC+QM7q4X5YhKV2eCmPG+1r2F3f4AaSz5sCrFqUtX4Jh20VFTKecl16MgiV9g==}
+
+  '@codemirror/commands@6.11.0':
+    resolution: {integrity: sha512-/K4Rl5BN0OtTiPWmJCdqODu38XnDMsDxKY5rgrPnCkutPTJf2wVbkoixLfealF5Kwse/s8P8M5jAiURiwSwnFA==}
 
   '@codemirror/lang-angular@0.1.4':
     resolution: {integrity: sha512-oap+gsltb/fzdlTQWD6BFF4bSLKcDnlxDsLdePiJpCVNKWXSTAbiiQeYI3UmES+BLAdkmIC1WjyztC1pi/bX4g==}
@@ -4147,6 +4193,13 @@ snapshots:
   '@better-fetch/fetch@1.3.1': {}
 
   '@codemirror/autocomplete@6.20.3':
+    dependencies:
+      '@codemirror/language': 6.12.4
+      '@codemirror/state': 6.7.2
+      '@codemirror/view': 6.43.10
+      '@lezer/common': 1.5.2
+
+  '@codemirror/commands@6.11.0':
     dependencies:
       '@codemirror/language': 6.12.4
       '@codemirror/state': 6.7.2

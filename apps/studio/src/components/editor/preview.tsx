@@ -66,7 +66,9 @@ export function usePreview({
 
   useEffect(() => {
     let live = true;
-    setState((previous) => ({ ...previous, pending: true }));
+    // Returning the same object when nothing changes keeps a keystroke from
+    // costing a render that paints an identical screen.
+    setState((previous) => (previous.pending ? previous : { ...previous, pending: true }));
 
     const timer = setTimeout(() => {
       void renderPreviewAction({ siteSlug, documentId, slug, markdown }).then(
