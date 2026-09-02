@@ -1,6 +1,8 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": [".env"],
+  "globalDependencies": [
+    ".env"
+  ],
   "globalEnv": [
     "NODE_ENV",
     "DATABASE_URL",
@@ -20,12 +22,22 @@
     "CRAWLER_IP_SALT",
     "RESEND_API_KEY",
     "EMAIL_FROM",
-    "LOG_LEVEL"
+    "LOG_LEVEL",
+    "CMS_AUTH_RATE_LIMIT",
+    "CMS_REQUIRE_EMAIL_VERIFICATION",
+    "NEXT_PUBLIC_CMS_STUDIO_URL",
+    "NEXT_PUBLIC_MEDIA_CDN_URL"
   ],
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "dist/**",
+        ".next/**",
+        "!.next/cache/**"
+      ]
     },
     "dev": {
       "cache": false,
@@ -33,10 +45,14 @@
     },
     "lint": {},
     "typecheck": {
-      "dependsOn": ["^build"]
+      "dependsOn": [
+        "^build"
+      ]
     },
     "test": {
-      "dependsOn": ["^build"]
+      "dependsOn": [
+        "^build"
+      ]
     }
   }
 }
