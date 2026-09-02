@@ -97,9 +97,8 @@ export function AuthorsScreen({
         <div className="min-w-0">
           <h1 className="text-lg leading-tight font-semibold text-[var(--color-ink)]">Authors</h1>
           <p className="mt-1 max-w-2xl text-sm text-[var(--color-ink-muted)]">
-            A byline, not a login. An author here can be a guest contributor with no account at
-            all, and deleting someone&rsquo;s account never removes their byline from what they
-            wrote.
+            A byline, not a login. An author can be a guest contributor with no account, and
+            deleting an account never removes a byline.
           </p>
         </div>
         <Button onClick={() => setEditing("new")}>New author</Button>
@@ -107,9 +106,8 @@ export function AuthorsScreen({
 
       {thin > 0 ? (
         <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] px-3 py-2 text-sm text-[var(--color-ink)]">
-          {thin === 1 ? "One author is" : `${thin} authors are`} missing most of their
-          structured-data fields. Those fields are what let a search or answer engine tell a real
-          person from a name on a page — open one to see what each is for.
+          {thin === 1 ? "One author is" : `${thin} authors are`} missing most of their profile
+          fields.
         </p>
       ) : null}
 
@@ -123,7 +121,7 @@ export function AuthorsScreen({
             empty={
               <EmptyState
                 title="No authors yet"
-                description="Every published document credits an author. Create one before you publish."
+                description="Every published document credits an author."
                 action={<Button onClick={() => setEditing("new")}>New author</Button>}
               />
             }
@@ -153,7 +151,7 @@ export function AuthorsScreen({
                   author.userId ? (
                     <Badge variant="outline">Linked</Badge>
                   ) : (
-                    <Badge variant="outline" title="A byline with no login. Perfectly normal.">
+                    <Badge variant="outline" title="A byline with no linked account.">
                       Guest
                     </Badge>
                   ),
@@ -223,13 +221,11 @@ function WhyItMatters() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>What an author profile is for</CardTitle>
+        <CardTitle>Author profile fields</CardTitle>
       </CardHeader>
       <CardContent className="pb-4">
         <p className="text-sm text-[var(--color-ink-muted)]">
-          Each field below is emitted as part of a schema.org <code>Person</code> attached to
-          everything that author writes. Together they are the difference between a name and a
-          verifiable person.
+          Emitted as a schema.org <code>Person</code> on everything that author writes.
         </p>
         <dl className="mt-3 flex flex-col gap-3">
           {items.map((item) => (
@@ -316,7 +312,7 @@ function AuthorForm({
             <Field
               label="Slug"
               required
-              description="Lowercase and hyphenated. Used in the author page URL, so changing it moves that page."
+              description="Lowercase and hyphenated. Changing it moves the author page."
             >
               {(props) => (
                 <Input
@@ -332,7 +328,7 @@ function AuthorForm({
 
             <Field
               label="Job title"
-              description="Person.jobTitle. The shortest answer to “why this person, on this subject”."
+              description="Person.jobTitle."
             >
               {(props) => (
                 <Input
@@ -348,7 +344,7 @@ function AuthorForm({
 
             <Field
               label="Biography"
-              description="Markdown. Says what they do and how long they have done it — the experience half of E-E-A-T, which nothing in the post text can supply."
+              description="Markdown."
             >
               {(props) => (
                 <Textarea
@@ -365,7 +361,7 @@ function AuthorForm({
             <StringListField
               name="sameAs"
               legend="Profile links"
-              description="Person.sameAs. Profiles that corroborate this identity elsewhere — LinkedIn, ORCID, GitHub, a conference speaker page. This is the field that turns a byline into a person an answer engine can reconcile."
+              description="Person.sameAs — LinkedIn, ORCID, GitHub, a speaker page."
               values={draft.sameAs}
               onChange={(next) => set("sameAs", next)}
               placeholder="https://www.linkedin.com/in/…"
@@ -376,7 +372,7 @@ function AuthorForm({
 
             <Field
               label="Topics"
-              description="Person.knowsAbout, one per line. The subjects this author has standing in — match them to your entities where you can."
+              description="Person.knowsAbout, one per line."
             >
               {(props) => (
                 <Textarea
@@ -392,7 +388,7 @@ function AuthorForm({
 
             <Field
               label="Personal site"
-              description="Person.url. A page they control, which usually outlives any profile."
+              description="Person.url."
             >
               {(props) => (
                 <Input
@@ -405,7 +401,7 @@ function AuthorForm({
               )}
             </Field>
 
-            <Field label="Photo" description="Person.image. The id of an asset in the media library.">
+            <Field label="Photo" description="Person.image.">
               {(props) => (
                 <Input
                   {...props}
@@ -417,7 +413,7 @@ function AuthorForm({
               )}
             </Field>
 
-            <Field label="Email" description="Never published. Used for editorial notifications only.">
+            <Field label="Email" description="Never published; editorial notifications only.">
               {(props) => (
                 <Input
                   {...props}
@@ -431,7 +427,7 @@ function AuthorForm({
 
             <Field
               label="Linked account"
-              description="Optional. Leave this empty for a guest contributor — a byline does not need a login. Clearing it on an existing author unlinks the account and keeps the name, bio and every credit exactly where they are."
+              description="Optional. Clearing it unlinks the account and keeps the name, bio and every credit."
             >
               {(props) => (
                 <Input
@@ -499,8 +495,7 @@ function CompletenessPanel({
       </CardHeader>
       <CardContent className="pb-4">
         <p className="text-sm text-[var(--color-ink-muted)]">
-          {done} of {total} fields filled in. Each one below is emitted as part of this
-          author&rsquo;s <code>Person</code> structured data.
+          {done} of {total} fields filled in.
         </p>
         {/* The bar restates the sentence above; the numbers are the accessible
             version, so it is hidden rather than given a redundant label. */}
@@ -569,15 +564,15 @@ function DeleteAuthorPanel({
           <p className="text-sm text-[var(--color-ink-muted)]">
             {credits === 0
               ? "Nothing currently credits this author, so deleting is safe."
-              : `${credits} live ${credits === 1 ? "document credits" : "documents credit"} this author. Deleting is refused until those credits go somewhere, because a blank byline also means no Person data on any of them.`}{" "}
-            Retiring an author instead — clearing <em>Active</em> above — keeps every published
-            credit intact and only removes them from the byline picker.
+              : `${credits} live ${credits === 1 ? "document credits" : "documents credit"} this author. Deleting is refused until those credits move, because a blank byline also drops the Person data.`}{" "}
+            Retiring instead — clearing <em>Active</em> above — keeps every credit and only removes
+            them from the byline picker.
           </p>
 
           {credits > 0 ? (
             <Field
               label="Reassign credits to"
-              description="Optional. Moves both the visible byline and any co-author credits to this person, then deletes the original."
+              description="Optional. Moves the byline and any co-author credits, then deletes the original."
             >
               {(props) => (
                 <select

@@ -49,43 +49,43 @@ export function authorCompleteness(author: AuthorDraftLike): Completeness {
       key: "name",
       label: "Display name",
       done: filled(author.name),
-      why: "The byline itself. Everything else hangs off it, and it is the string a reader will search for to check whether this person is real.",
+      why: "Person.name — the byline itself.",
     },
     {
       key: "jobTitle",
       label: "Job title",
       done: filled(author.jobTitle),
-      why: "Emitted as Person.jobTitle. It is the shortest possible answer to “why should I believe this person about this subject”, and it costs one line.",
+      why: "Person.jobTitle.",
     },
     {
       key: "bio",
       label: "Biography",
       done: filled(author.bioMd),
-      why: "Shown on the author page and used as the Person description. Say what they do and how long they have done it — experience is the part of E-E-A-T a machine cannot infer from the text of a post.",
+      why: "Person.description, and the body of the author page.",
     },
     {
       key: "avatar",
       label: "Photo",
       done: filled(author.avatarAssetId),
-      why: "Person.image. A real face on the author page is what separates a byline from a pen name, for readers first and crawlers second.",
+      why: "Person.image.",
     },
     {
       key: "sameAs",
       label: "Profile links",
       done: author.sameAs.filter((url) => filled(url)).length > 0,
-      why: "Person.sameAs. These are the corroboration: they let a search or answer engine tie this byline to the same person on LinkedIn, an ORCID record, a conference page or GitHub, instead of treating them as an unknown name.",
+      why: "Person.sameAs — profiles elsewhere that corroborate this identity.",
     },
     {
       key: "knowsAbout",
       label: "Topics",
       done: author.knowsAbout.filter((topic) => filled(topic)).length > 0,
-      why: "Person.knowsAbout. States the subjects this author has standing in, which is what connects their name to the topics your entities cover rather than to whatever they happened to write last.",
+      why: "Person.knowsAbout — the subjects this author has standing in.",
     },
     {
       key: "url",
       label: "Personal site",
       done: filled(author.url),
-      why: "Person.url. A home page they control, which is the most durable of the identity links — profiles get deleted, domains usually outlive them.",
+      why: "Person.url — a page they control.",
     },
   ];
 
@@ -110,7 +110,7 @@ export function sameAsAdvice(sameAs: readonly string[]): string | null {
   const count = sameAs.filter((url) => url.trim().length > 0).length;
   if (count === 0) return null;
   if (count === 1) {
-    return "One profile link is a claim. Two that point at the same person — a professional profile and something independent, like a talk listing or a publication record — is corroboration.";
+    return "One profile link is a claim. Two independent ones are corroboration.";
   }
   return null;
 }

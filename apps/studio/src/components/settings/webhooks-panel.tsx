@@ -84,7 +84,7 @@ export function WebhooksPanel({
         >
           <Field
             label="Endpoint URL"
-            description="Must be https. The payload and its signature travel in the request body, so plain http would publish both to every network in the path."
+            description="Must be https."
           >
             {({ id, ...wiring }) => (
               <Input
@@ -128,7 +128,7 @@ export function WebhooksPanel({
           <EmptyState
             icon={WebhookIcon}
             title="No webhooks"
-            description="A webhook lets the consuming site revalidate a page the moment it is published, instead of waiting for its next scheduled rebuild."
+            description="Lets the consuming site revalidate a page the moment it is published."
           />
         ) : (
           <ul className="divide-y divide-[var(--color-border)] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]">
@@ -158,7 +158,7 @@ export function WebhooksPanel({
                   onClick={() => {
                     if (
                       !window.confirm(
-                        "Rotate this webhook's signing secret? Deliveries stop verifying on the receiving site the moment you do, until it is updated with the new secret.",
+                        "Rotate this webhook's signing secret? Deliveries stop verifying on the receiving site until it is updated with the new secret.",
                       )
                     ) {
                       return;

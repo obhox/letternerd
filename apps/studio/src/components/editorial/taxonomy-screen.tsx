@@ -39,20 +39,18 @@ const KIND_LABEL: Record<TermKind, { one: string; many: string; blurb: string }>
   tag: {
     one: "tag",
     many: "Tags",
-    blurb:
-      "Flat labels for filing. Useful for readers browsing the archive; they say nothing to a machine about what the subject actually is.",
+    blurb: "Flat labels for filing.",
   },
   category: {
     one: "category",
     many: "Categories",
-    blurb:
-      "The site's own hierarchy. A document sits in one, and the trail becomes its breadcrumbs.",
+    blurb: "The site's own hierarchy. The trail becomes a document's breadcrumbs.",
   },
   entity: {
     one: "entity",
     many: "Entities",
     blurb:
-      "The named things your content is about. Unlike a tag, an entity points outward: sameAs and a Wikidata id are what let an answer engine work out that your “Postgres” is the same subject as everyone else's, instead of a word that happens to appear on your site.",
+      "The named things your content is about. A sameAs link or a Wikidata id says which subject each one is.",
   },
 };
 
@@ -87,8 +85,7 @@ export function TaxonomyScreen({
       <div>
         <h1 className="text-lg leading-tight font-semibold text-[var(--color-ink)]">Taxonomy</h1>
         <p className="mt-1 max-w-2xl text-sm text-[var(--color-ink-muted)]">
-          How content is filed, and what it is about. Those are two different jobs — the tabs
-          below keep them apart on purpose.
+          How content is filed, and what it is about.
         </p>
       </div>
 
@@ -163,8 +160,8 @@ function TermPanel({
       {unreconciled > 0 ? (
         <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] px-3 py-2 text-sm text-[var(--color-ink)]">
           {unreconciled === 1 ? "One entity has" : `${unreconciled} entities have`} neither a
-          Wikidata id nor a sameAs link. Without one of those an entity is only a tag with extra
-          fields — nothing outside this site can tell what it refers to.
+          Wikidata id nor a sameAs link, so nothing outside this site can tell what
+          {unreconciled === 1 ? " it refers" : " they refer"} to.
         </p>
       ) : null}
 
@@ -353,7 +350,7 @@ function TermForm({
             <>
               <Field
                 label="schema.org type"
-                description="What kind of thing this is. Emitted as the @type of the document's `about` node."
+                description="Emitted as the @type of the document's about node."
               >
                 {(props) => (
                   <select
@@ -373,7 +370,7 @@ function TermForm({
 
               <Field
                 label="Wikidata id"
-                description="A Q-number, like Q192490. The single most useful reconciliation key there is: it names the subject in a vocabulary every major answer engine already reads, so your entity stops being a local string."
+                description="A Q-number, like Q192490."
               >
                 {(props) => (
                   <Input
@@ -389,7 +386,7 @@ function TermForm({
               <StringListField
                 name="sameAs"
                 legend="sameAs links"
-                description="Authoritative URLs for this same subject — an official site, a Wikipedia article, a product page. Two independent ones that agree is what makes the identification checkable."
+                description="Authoritative URLs for this same subject — an official site, a Wikipedia article, a product page."
                 values={sameAs}
                 onChange={setSameAs}
                 placeholder="https://www.postgresql.org"
@@ -397,7 +394,7 @@ function TermForm({
 
               <Field
                 label="Aliases"
-                description="One per line. Other names the same thing goes by, so a mention under any of them still counts."
+                description="One per line. Other names the same thing goes by."
               >
                 {(props) => (
                   <Textarea
@@ -432,7 +429,7 @@ function TermForm({
             <p className="text-sm text-[var(--color-ink-muted)]">
               Deleting removes the association from {term.documentCount}{" "}
               {term.documentCount === 1 ? "document" : "documents"}. Nothing is unpublished and no
-              text changes — unlike an author, a {labels.one} carries no attribution.
+              text changes.
             </p>
             <div>
               <Button type="submit" variant="danger" size="sm" disabled={deleting}>

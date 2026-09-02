@@ -271,7 +271,7 @@ export function SeoPanel({
       <section className="flex flex-col gap-2">
         <Field
           label="Meta description"
-          description="Answers the question the title asks. Not the same job as an excerpt."
+          description="Answers the question the title asks. Not an excerpt."
         >
           {({ id, "aria-describedby": describedBy }) => (
             <textarea
@@ -306,7 +306,7 @@ export function SeoPanel({
 
         <Field
           label="Canonical override"
-          description="For syndicated or republished content that canonicalises somewhere else. Leave empty otherwise."
+          description="For syndicated content that canonicalises elsewhere. Leave empty otherwise."
         >
           {({ id, "aria-describedby": describedBy }) => (
             <Input
@@ -349,14 +349,11 @@ export function SeoPanel({
           <Badge variant="outline">{headings.length}</Badge>
         </div>
         <p className="text-xs text-[var(--color-ink-muted)]">
-          These anchor ids are the stable citation targets. They survive a heading being
-          reworded, so anything already linking to one keeps resolving.
+          Anchor ids survive a heading being reworded, so existing links keep resolving.
         </p>
 
         {headings.length === 0 ? (
-          <p className="text-xs text-[var(--color-ink-muted)]">
-            No headings yet. A post with no headings has nothing for an answer engine to cite.
-          </p>
+          <p className="text-xs text-[var(--color-ink-muted)]">No headings yet.</p>
         ) : (
           <ul className="flex flex-col">
             {headings.map((heading) => (

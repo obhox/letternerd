@@ -96,7 +96,7 @@ export function usePreview({
             error:
               error instanceof Error
                 ? error.message
-                : "The preview could not be rendered. Check your connection and keep writing — nothing has been lost.",
+                : "The preview could not be rendered. Nothing has been lost.",
             checked: true,
           });
         },
@@ -169,9 +169,6 @@ export function Preview({ state, className }: PreviewProps) {
       <header className="flex h-11 shrink-0 items-center gap-2 border-b border-[var(--color-border)] px-3">
         <EyeIcon className="size-4 text-[var(--color-ink-muted)]" aria-hidden="true" />
         <h2 className="text-sm font-medium">Preview</h2>
-        <span className="text-xs text-[var(--color-ink-muted)]">
-          rendered by the publishing pipeline
-        </span>
 
         <div className="ml-auto flex items-center gap-2">
           {payload && (
@@ -192,7 +189,7 @@ export function Preview({ state, className }: PreviewProps) {
           <p className="py-6 text-sm text-[var(--color-ink-muted)]">Rendering…</p>
         ) : payload.html.trim().length === 0 ? (
           <p className="py-6 text-sm text-[var(--color-ink-muted)]">
-            Nothing to preview yet. Start writing on the left.
+            Nothing to preview yet.
           </p>
         ) : (
           /*

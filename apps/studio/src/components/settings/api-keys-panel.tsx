@@ -34,17 +34,17 @@ const KEY_TYPES = [
   {
     value: "publishable",
     label: "Publishable (cms_pk_)",
-    hint: "Safe in a browser bundle: published content and media reads, plus the analytics beacon. Cannot see drafts.",
+    hint: "Safe in a browser bundle. Published content and media reads; cannot see drafts.",
   },
   {
     value: "read",
     label: "Server read (cms_sk_)",
-    hint: "Reads, including analytics. Server-side only — it is not origin-checked and must never reach a browser.",
+    hint: "Reads, including analytics. Server-side only — never expose it to a browser.",
   },
   {
     value: "admin",
     label: "Admin (cms_ak_)",
-    hint: "Writes and publishes content. Still cannot change site settings, manage members or mint further keys.",
+    hint: "Writes and publishes content. Cannot change settings, manage members or mint keys.",
   },
 ] as const;
 
@@ -172,7 +172,7 @@ export function ApiKeysPanel({
         >
           <Field
             label="Name"
-            description="What this key is for — the deployment, the CI job, the MCP client. It is the only way to tell keys apart later."
+            description="What this key is for. It is the only way to tell keys apart later."
           >
             {({ id, ...wiring }) => (
               <Input
@@ -204,7 +204,7 @@ export function ApiKeysPanel({
           </Field>
 
           <p className="text-sm text-[var(--color-ink-muted)]">
-            The key is shown once, on the next screen, and never again.
+            The key is shown once and never again.
           </p>
 
           <div className="flex items-center gap-3">
@@ -239,7 +239,7 @@ export function ApiKeysPanel({
             <EmptyState
               icon={KeyRoundIcon}
               title="No API keys yet"
-              description="A consuming site, a CI job or an MCP client needs one of these to reach the content API."
+              description="A consuming site, a CI job or an MCP client needs one to reach the content API."
             />
           }
         />

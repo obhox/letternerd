@@ -49,7 +49,7 @@ export function GeneralForm({ siteSlug, site }: { siteSlug: string; site: SiteSe
         });
       }}
     >
-      <Field label="Site name" description="Shown in the studio and used as the feed title fallback.">
+      <Field label="Site name" description="Also the feed title fallback.">
         {({ id, ...wiring }) => (
           <Input
             id={id}
@@ -63,7 +63,7 @@ export function GeneralForm({ siteSlug, site }: { siteSlug: string; site: SiteSe
 
       <Field
         label="Base URL"
-        description="The origin of the site that renders this content — not this studio's address. Every canonical URL, sitemap entry and feed link is built from it."
+        description="The origin of the site that renders this content — not this studio's address."
       >
         {({ id, ...wiring }) => (
           <Input
@@ -85,17 +85,16 @@ export function GeneralForm({ siteSlug, site }: { siteSlug: string; site: SiteSe
         >
           <TriangleAlertIcon className="mt-0.5 size-4 shrink-0 text-[var(--color-warn)]" aria-hidden="true" />
           <span>
-            Saving this rewrites the canonical URL of every published document on this site, along
-            with every sitemap entry, feed link and Open Graph image reference. Search engines will
-            re-evaluate the whole site. Change it only when the site has genuinely moved, and add
-            redirects from the old origin.
+            Saving this rewrites the canonical URL of every published document, along with every
+            sitemap entry, feed link and Open Graph image reference. Change it only when the site
+            has genuinely moved, and add redirects from the old origin.
           </span>
         </p>
       )}
 
       <Field
         label="Blog base path"
-        description="Where posts live on the consuming site, e.g. /blog. Post URLs are this path plus the slug."
+        description="Where posts live on the consuming site, e.g. /blog."
       >
         {({ id, ...wiring }) => (
           <Input
@@ -110,7 +109,7 @@ export function GeneralForm({ siteSlug, site }: { siteSlug: string; site: SiteSe
 
       <Field
         label="Locale"
-        description="BCP-47, e.g. en or en-GB. Drives og:locale, inLanguage and hreflang."
+        description="BCP-47, e.g. en or en-GB."
       >
         {({ id, ...wiring }) => (
           <Input

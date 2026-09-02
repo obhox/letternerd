@@ -361,8 +361,7 @@ export function PostEditor({ site, post, canPublish, descriptionRange }: PostEdi
             Publishing was refused
           </h2>
           <p className="mt-1 mb-3 text-sm text-[var(--color-ink)]">
-            {blocked.message} Nothing was published and nothing was lost. Fix the problems below
-            and press publish again.
+            {blocked.message} Nothing was published and nothing was lost.
           </p>
           <FindingList findings={blocked.findings} />
         </section>

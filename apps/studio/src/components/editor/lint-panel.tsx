@@ -76,8 +76,7 @@ export function LintPanel({ findings, checked, pending, className }: LintPanelPr
     {
       id: "blocking",
       heading: "Blocks publishing",
-      consequence:
-        "Publishing is refused until these are fixed — each one ships something visibly broken.",
+      consequence: "Publishing is refused until these are fixed.",
       icon: CircleAlertIcon,
       tone: "text-[var(--color-danger)]",
       border: "border-[var(--color-danger)]",
@@ -127,7 +126,7 @@ export function LintPanel({ findings, checked, pending, className }: LintPanelPr
       <div className="ui-scroll max-h-80 overflow-auto px-3 py-3">
         {!checked ? (
           <p className="text-sm text-[var(--color-ink-muted)]">
-            Checks run with the preview. Nothing has been checked yet.
+            Not checked yet. Checks run with the preview.
           </p>
         ) : findings.length === 0 ? (
           // Silence would read as "not run". Say the check happened and passed.

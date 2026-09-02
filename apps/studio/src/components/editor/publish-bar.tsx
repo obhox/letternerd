@@ -180,8 +180,8 @@ export function PublishBar({
         <p className="flex w-full items-center gap-1.5 text-xs text-[var(--color-ink-muted)]">
           <InfoIcon className="size-3.5 shrink-0" aria-hidden="true" />
           <span>
-            This page was rendered by an older version of the publishing pipeline. A backfill
-            re-renders it automatically — nothing for you to do.
+            Rendered by an older version of the publishing pipeline. A backfill re-renders it
+            automatically.
           </span>
         </p>
       )}

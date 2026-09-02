@@ -76,8 +76,6 @@ export function SeoForm({ siteSlug, site }: { siteSlug: string; site: SiteSettin
         </legend>
         <p className="-mt-2 text-sm text-[var(--color-ink-muted)]">
           Emitted once per page as an <code className="font-mono text-xs">Organization</code> node.
-          It is what ties every article on the site to a single publisher, so search engines and
-          answer engines attribute them together.
         </p>
 
         <Field label="Organization name" description="The publisher, not the site title.">
@@ -100,7 +98,7 @@ export function SeoForm({ siteSlug, site }: { siteSlug: string; site: SiteSettin
 
         <Field
           label="Same-as profiles"
-          description="One absolute URL per line — the organisation's own profiles elsewhere. These are the sameAs entries that let an engine confirm this is the same publisher."
+          description="One absolute URL per line — the organisation's own profiles elsewhere."
         >
           {({ id, ...wiring }) => (
             <Textarea
@@ -152,7 +150,7 @@ export function SeoForm({ siteSlug, site }: { siteSlug: string; site: SiteSettin
 
         <Field
           label="robots.txt additions"
-          description="Appended verbatim to the generated robots.txt. Nothing here is validated — a stray Disallow: / will be served exactly as typed."
+          description="Appended verbatim to the generated robots.txt. Not validated."
         >
           {({ id, ...wiring }) => (
             <Textarea
@@ -168,7 +166,7 @@ export function SeoForm({ siteSlug, site }: { siteSlug: string; site: SiteSettin
 
         <Field
           label="llms.txt introduction"
-          description="The summary at the head of llms.txt. Say what this site is about and who it is for — this is the first thing an answer engine reads."
+          description="The summary at the head of llms.txt."
         >
           {({ id, ...wiring }) => (
             <Textarea

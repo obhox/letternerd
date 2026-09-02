@@ -34,8 +34,8 @@ import type { RedirectChain, RedirectRow, SlugHistoryRow } from "./types";
 type Action = (state: EditorialState, formData: FormData) => Promise<EditorialState>;
 
 const STATUS_NOTE: Record<number, string> = {
-  301: "Permanent. Passes the ranking signal on and gets cached by browsers — the right answer for a page that has genuinely moved.",
-  302: "Temporary. The original URL keeps the signal, which is what you want while a page is briefly elsewhere.",
+  301: "Permanent. Passes the ranking signal on, and browsers cache it.",
+  302: "Temporary. The original URL keeps the signal.",
   307: "Temporary, preserving the request method.",
   308: "Permanent, preserving the request method.",
 };
@@ -75,8 +75,7 @@ export function RedirectsScreen({
             Redirects
           </h1>
           <p className="mt-1 max-w-2xl text-sm text-[var(--color-ink-muted)]">
-            Two separate things, listed separately: what the CMS recorded when a published slug
-            changed, and the rules you wrote by hand.
+            What the CMS recorded when a published slug changed, and the rules you wrote by hand.
           </p>
         </div>
         <Button onClick={() => setEditing("new")}>New rule</Button>
@@ -93,8 +92,8 @@ export function RedirectsScreen({
             Manual rules
           </h2>
           <p className="mt-1 max-w-2xl text-sm text-[var(--color-ink-muted)]">
-            Rules you decide: a retired landing page, a vanity path, a move to somewhere off this
-            site. These are yours to edit and delete.
+            Rules you wrote — a retired landing page, a vanity path, a move off this site. Yours
+            to edit and delete.
           </p>
         </div>
 
@@ -107,7 +106,7 @@ export function RedirectsScreen({
             empty={
               <EmptyState
                 title="No manual rules"
-                description="Slug changes are already handled automatically below. Add a rule here when a URL moves for some other reason."
+                description="Slug changes are handled automatically below. Add a rule when a URL moves for another reason."
                 action={<Button onClick={() => setEditing("new")}>New rule</Button>}
               />
             }
@@ -178,8 +177,7 @@ function ChainsNotice({ chains }: { chains: RedirectChain[] }) {
       </h2>
       <p className="mt-1 max-w-3xl text-sm text-[var(--color-ink)]">
         A chain is a rule whose destination is itself redirected. Every extra hop is somewhere a
-        crawler can stop following, which spends exactly the signal these rules exist to carry.
-        Point the first rule straight at the final URL.
+        crawler can stop following. Point the first rule straight at the final URL.
       </p>
       <ul className="mt-2 flex flex-col gap-1">
         {chains.map((chain) => (
@@ -214,10 +212,9 @@ function SlugHistorySection({
           <Badge variant="outline">Read-only</Badge>
         </div>
         <p className="mt-1 max-w-2xl text-sm text-[var(--color-ink-muted)]">
-          Written by the CMS whenever a <em>published</em> document&rsquo;s slug changes, inside
-          the same save. It is a record of what happened, not a setting, so there is nothing here
-          to edit or delete. A draft never appears — it had no URL anyone could have linked to.
-          To retire one of these, change the document&rsquo;s slug back.
+          Written by the CMS whenever a <em>published</em> document&rsquo;s slug changes. A record
+          of what happened, not a setting, so there is nothing here to edit or delete. To retire
+          one, change the document&rsquo;s slug back.
         </p>
       </div>
 
@@ -322,7 +319,7 @@ function RedirectForm({
           <Field
             label="From"
             required
-            description="A path on this site, like /old-pricing. Pasting a full URL is fine — the origin is stripped, and a trailing slash is ignored."
+            description="A path on this site. A pasted full URL has its origin stripped; a trailing slash is ignored."
           >
             {(props) => (
               <Input
@@ -338,7 +335,7 @@ function RedirectForm({
           <Field
             label="To"
             required
-            description="A path on this site, or a full URL to send visitors somewhere else entirely."
+            description="A path on this site, or a full URL."
           >
             {(props) => (
               <Input

@@ -21,7 +21,7 @@ export default async function SettingsLayout({
     <div className="mx-auto max-w-4xl">
       <PageHeader
         title="Settings"
-        description="Configuration, credentials and people for this site. Owner access only."
+        description="Owner access only."
       >
         <SettingsTabs siteSlug={site} />
       </PageHeader>

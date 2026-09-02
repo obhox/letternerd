@@ -61,7 +61,7 @@ export function MembersPanel({
   /** True for the one member whose removal or demotion would strand the site. */
   const isLastOwner = (member: MemberView) => member.role === "owner" && ownerCount === 1;
   const LAST_OWNER_REASON =
-    "This is the site's only owner. Promote someone else to owner first — a site with no owner cannot be administered by anyone.";
+    "The site's only owner. Promote someone else to owner first.";
 
   const columns: DataTableColumn<MemberView>[] = [
     {
@@ -180,9 +180,8 @@ export function MembersPanel({
           role="status"
           className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] p-3 text-sm text-[var(--color-ink-muted)]"
         >
-          This site has one owner. Their role and their access are locked until a second owner
-          exists — losing the only owner would leave the site with nobody able to manage members,
-          keys or settings.
+          This site has one owner, so their role and access are locked until a second owner
+          exists.
         </p>
       )}
 
@@ -212,7 +211,7 @@ export function MembersPanel({
         >
           <Field
             label="Email address"
-            description="The invitation works only for this address, and only once the account behind it has verified its email."
+            description="Works only for this address, once that account has verified its email."
           >
             {({ id, ...wiring }) => (
               <Input
@@ -230,7 +229,7 @@ export function MembersPanel({
             label="Role"
             description={
               (ROLE_DESCRIPTIONS[role as SiteRole] ?? "") +
-              " An invitation cannot grant ownership — promote an existing member instead."
+              " Ownership cannot be invited; promote an existing member instead."
             }
           >
             {({ id }) => (

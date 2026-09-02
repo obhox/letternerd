@@ -190,8 +190,7 @@ export const BLOCK_COMMANDS: EditorCommand[] = [
     id: "faq",
     label: "FAQ",
     title:
-      "Question and answer. Each answer must also appear in the body above — an " +
-      "answer that exists only here will not pass the publish gate",
+      "Question and answer. Each answer must also appear in the body, or the publish gate refuses",
     icon: CircleHelpIcon,
     /*
      * Placeholder text, not empty scaffolding.

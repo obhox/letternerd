@@ -1,46 +1,187 @@
 @import "tailwindcss";
 
 /*
- * Tailwind v4 configures itself from CSS rather than a JS config file.
+ * The studio's design system.
  *
- * The palette is deliberately neutral and low-contrast-safe: this is a dense
- * editorial tool where the content preview is the thing that should carry
- * colour, not the chrome around it.
+ * Monotone: every colour here is achromatic (equal lightness across the three
+ * channels, chroma exactly 0). Nothing in the interface carries hue, which
+ * means hierarchy has to be earned by type scale, weight, spacing and contrast
+ * rather than borrowed from a palette. That constraint is the point — a dense
+ * editorial tool where the chrome is grey lets the content be the only thing
+ * with presence.
+ *
+ * The consequence to respect: severity cannot be signalled by hue. It is
+ * carried by CONTRAST WEIGHT instead — a blocking problem is the darkest thing
+ * on the screen, a warning sits mid-scale, a resolved state recedes — always
+ * alongside an icon and a text label. Colour was never an acceptable sole
+ * carrier of meaning; here it is not available at all, so the discipline is
+ * enforced rather than merely encouraged.
  */
+
 @theme {
-  --color-canvas: oklch(0.99 0 0);
-  --color-surface: oklch(1 0 0);
-  --color-muted: oklch(0.97 0.002 265);
-  --color-border: oklch(0.92 0.004 265);
-  --color-ink: oklch(0.22 0.01 265);
-  --color-ink-muted: oklch(0.52 0.012 265);
-  --color-accent: oklch(0.55 0.16 258);
-  --color-accent-ink: oklch(0.99 0 0);
+  /* ---- the ramp -------------------------------------------------------- */
+  /* Nine stops, evenly perceptually spaced. Every semantic token below is one
+     of these, so the interface cannot drift into arbitrary greys. */
+  --grey-0: oklch(1 0 0);
+  --grey-1: oklch(0.976 0 0);
+  --grey-2: oklch(0.944 0 0);
+  --grey-3: oklch(0.891 0 0);
+  --grey-4: oklch(0.775 0 0);
+  --grey-5: oklch(0.606 0 0);
+  --grey-6: oklch(0.451 0 0);
+  --grey-7: oklch(0.302 0 0);
+  --grey-8: oklch(0.194 0 0);
+  --grey-9: oklch(0.145 0 0);
+  --grey-10: oklch(0.106 0 0);
 
-  /* Lint severities. Used by the editor gutter and the publish gate. */
-  --color-danger: oklch(0.58 0.19 25);
-  --color-warn: oklch(0.72 0.15 75);
-  --color-ok: oklch(0.62 0.14 155);
+  /* ---- semantic surfaces (light) --------------------------------------- */
+  --color-canvas: var(--grey-1);
+  --color-surface: var(--grey-0);
+  --color-surface-sunken: var(--grey-2);
+  --color-muted: var(--grey-2);
+  --color-border: var(--grey-3);
+  --color-border-strong: var(--grey-4);
 
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* ---- ink ------------------------------------------------------------- */
+  --color-ink: var(--grey-10);
+  --color-ink-secondary: var(--grey-7);
+  --color-ink-muted: var(--grey-6);
+  --color-ink-faint: var(--grey-5);
+
+  /* ---- interactive ----------------------------------------------------- */
+  /* The "accent" is simply maximum contrast: a primary button is the darkest
+     block on a light page and inverts in dark mode. */
+  --color-accent: var(--grey-10);
+  --color-accent-ink: var(--grey-0);
+  --color-accent-hover: var(--grey-8);
+
+  /* ---- severity, as contrast weight rather than hue --------------------- */
+  --color-danger: var(--grey-10);
+  --color-danger-surface: var(--grey-2);
+  --color-warn: var(--grey-6);
+  --color-warn-surface: var(--grey-1);
+  --color-ok: var(--grey-5);
+  --color-ok-surface: var(--grey-1);
+
+  /* ---- type ------------------------------------------------------------ */
+  /* System stack only. A webfont on an internal tool costs a round trip and a
+     flash of unstyled text for no gain the user would notice. */
+  --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  /* A modular scale tuned for density: 13px body, not 16px. This is a tool
+     someone reads all day at close range, not a marketing page. */
+  --text-2xs: 0.6875rem;   /* 11 — table meta, timestamps */
+  --text-xs: 0.75rem;      /* 12 — labels, badges */
+  --text-sm: 0.8125rem;    /* 13 — body, table cells */
+  --text-base: 0.875rem;   /* 14 — form inputs, prose */
+  --text-md: 0.9375rem;    /* 15 — card titles */
+  --text-lg: 1.125rem;     /* 18 — section headings */
+  --text-xl: 1.375rem;     /* 22 — page titles */
+  --text-2xl: 1.75rem;     /* 28 — stat figures */
+  --text-3xl: 2.25rem;     /* 36 — the one number that matters */
+
+  --text-2xs--line-height: 1.45;
+  --text-xs--line-height: 1.45;
+  --text-sm--line-height: 1.55;
+  --text-base--line-height: 1.6;
+  --text-md--line-height: 1.5;
+  --text-lg--line-height: 1.35;
+  --text-xl--line-height: 1.25;
+  --text-2xl--line-height: 1.15;
+  --text-3xl--line-height: 1.05;
+
+  /* Large type sets loose by default; pulling it in is most of what makes a
+     heading look deliberate rather than merely big. */
+  --tracking-tight: -0.011em;
+  --tracking-tighter: -0.021em;
+
+  /* ---- structure ------------------------------------------------------- */
+  --radius-sm: 0.25rem;
+  --radius: 0.375rem;
+  --radius-lg: 0.5rem;
+
+  --shadow-raised: 0 1px 2px oklch(0 0 0 / 0.05), 0 1px 3px oklch(0 0 0 / 0.04);
+  --shadow-overlay: 0 8px 24px oklch(0 0 0 / 0.12), 0 2px 6px oklch(0 0 0 / 0.08);
+
+  --sidebar-width: 15rem;
+  --header-height: 3.25rem;
+  --content-max: 92rem;
 }
 
+/*
+ * Dark mode inverts the ramp rather than recolouring it.
+ *
+ * The surfaces do not go to pure black: a true-black panel under a bright
+ * editor pane is a glare edge, and hairline borders vanish against it.
+ */
 @media (prefers-color-scheme: dark) {
   @theme {
-    --color-canvas: oklch(0.17 0.008 265);
-    --color-surface: oklch(0.21 0.009 265);
-    --color-muted: oklch(0.25 0.01 265);
-    --color-border: oklch(0.30 0.012 265);
-    --color-ink: oklch(0.95 0.003 265);
-    --color-ink-muted: oklch(0.70 0.012 265);
-    --color-accent: oklch(0.68 0.15 258);
-    --color-accent-ink: oklch(0.17 0.008 265);
+    --color-canvas: var(--grey-10);
+    --color-surface: var(--grey-9);
+    --color-surface-sunken: oklch(0.085 0 0);
+    --color-muted: var(--grey-8);
+    --color-border: oklch(0.26 0 0);
+    --color-border-strong: var(--grey-7);
+
+    --color-ink: var(--grey-1);
+    --color-ink-secondary: var(--grey-4);
+    --color-ink-muted: var(--grey-5);
+    --color-ink-faint: var(--grey-6);
+
+    --color-accent: var(--grey-1);
+    --color-accent-ink: var(--grey-10);
+    --color-accent-hover: var(--grey-0);
+
+    --color-danger: var(--grey-0);
+    --color-danger-surface: var(--grey-8);
+    --color-warn: var(--grey-4);
+    --color-warn-surface: var(--grey-9);
+    --color-ok: var(--grey-5);
+    --color-ok-surface: var(--grey-9);
+
+    --shadow-raised: 0 1px 2px oklch(0 0 0 / 0.4);
+    --shadow-overlay: 0 8px 24px oklch(0 0 0 / 0.6), 0 2px 6px oklch(0 0 0 / 0.4);
   }
 }
 
-html,
+html {
+  color-scheme: light dark;
+}
+
+/*
+ * The root stays at the browser default.
+ *
+ * Setting a rem font-size on `html` and then again on `body` compounds: the
+ * root shrinks, and every rem-based size in the system — including the one
+ * being applied to body — is then measured against the smaller root. That is
+ * how a 13px body becomes 10.5px and a 22px page title becomes 14.6px. The
+ * root must stay 16px so rem means what the scale says it means; only body
+ * carries the default text size.
+ */
+html {
+  font-size: 100%;
+}
+
 body {
   background: var(--color-canvas);
   color: var(--color-ink);
+  font-size: var(--text-sm);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Tabular figures wherever numbers sit in a column, so digits line up and a
+   changing count does not shift the layout around it. */
+.tabular,
+table td,
+table th {
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background: var(--color-ink);
+  color: var(--color-surface);
 }

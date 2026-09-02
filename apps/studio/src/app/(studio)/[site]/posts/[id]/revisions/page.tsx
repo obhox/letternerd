@@ -82,12 +82,11 @@ export default async function RevisionsPage({
         title="Revisions"
         description={
           <>
-            Every saved revision of{" "}
             <span className="font-medium text-[var(--color-ink)]">
-              {text(post.title) || "this post"}
+              {text(post.title) || "This post"}
             </span>
-            , newest first. A revision is captured before each edit, so the newest one is the
-            state immediately prior to the current text.
+            , newest first. Each revision is captured before an edit, so the newest is the state
+            immediately prior to the current text.
           </>
         }
         actions={
@@ -98,15 +97,15 @@ export default async function RevisionsPage({
       />
 
       <p className="rounded-md border border-[var(--color-border)] bg-[var(--color-muted)] px-3 py-2 text-sm text-[var(--color-ink-muted)]">
-        This is a read-only history. Restoring a revision is not available yet — to bring text
-        back, copy it from a revision below and paste it into the editor.
+        Read-only. Restoring is not available yet — to bring text back, copy it from a revision
+        and paste it into the editor.
       </p>
 
       {revisions.length === 0 ? (
         <EmptyState
           icon={HistoryIcon}
           title="No revisions yet"
-          description="A revision is written the first time this post is edited after being created."
+          description="One is written the first time this post is edited."
         />
       ) : (
         <ol className="flex flex-col gap-3">
