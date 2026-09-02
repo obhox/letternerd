@@ -25,10 +25,16 @@ import { NextResponse, type NextRequest } from "next/server";
  * make sign-in redirect to sign-in. `/api/health` is the container's liveness
  * probe, and an orchestrator that receives a 307 to a login page concludes the
  * process is unhealthy and restarts it in a loop.
+ *
+ * `/api/v1` is the public content API, which authenticates with an API key and
+ * rejects sessions outright. Redirecting an unauthenticated request there to a
+ * sign-in page would answer a machine with HTML; it returns its own 401 with a
+ * WWW-Authenticate header instead.
  */
 const PUBLIC_PREFIXES = [
   "/api/auth",
   "/api/health",
+  "/api/v1",
   "/sign-in",
   "/sign-up",
   "/verify-email",

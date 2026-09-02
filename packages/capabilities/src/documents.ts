@@ -89,12 +89,21 @@ export const searchContent = defineCapability({
         title: schema.documents.title,
         description: schema.documents.description,
         publishedAt: schema.documents.publishedAt,
+        // A scheduled document without its go-live time is nearly useless to a
+        // list screen, which would otherwise have to re-fetch each one.
+        scheduledFor: schema.documents.scheduledFor,
         updatedAt: schema.documents.updatedAt,
         readingTimeMinutes: schema.documents.readingTimeMinutes,
         wordCount: schema.documents.wordCount,
         lintReport: schema.documents.lintReport,
+        primaryAuthorId: schema.documents.primaryAuthorId,
+        // Joined rather than resolved by the caller: a list of twenty rows
+        // would otherwise be twenty follow-up queries, and the byline is on
+        // every listing screen.
+        authorName: schema.authors.name,
       })
       .from(schema.documents)
+      .leftJoin(schema.authors, eq(schema.documents.primaryAuthorId, schema.authors.id))
       .where(and(...conditions))
       .orderBy(desc(schema.documents.updatedAt), desc(schema.documents.id))
       .limit(input.limit + 1);

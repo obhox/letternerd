@@ -14,13 +14,28 @@ import "./services";
 
 import { createRegistry } from "@cms/core";
 import { documentCapabilities } from "./documents";
+import { editorialCapabilities } from "./editorial";
+import { insightsCapabilities } from "./insights";
+import { mediaCapabilities } from "./media";
+import { settingsCapabilities } from "./settings";
 import { siteCapabilities } from "./sites";
 
-export const capabilities = [...siteCapabilities, ...documentCapabilities];
+export const capabilities = [
+  ...siteCapabilities,
+  ...documentCapabilities,
+  ...mediaCapabilities,
+  ...editorialCapabilities,
+  ...settingsCapabilities,
+  ...insightsCapabilities,
+];
 
 export const registry = createRegistry(capabilities);
 
 export * from "./documents";
+export * from "./editorial";
+export * from "./insights";
+export * from "./media";
+export * from "./settings";
 export * from "./sites";
 export * from "./render";
 export * from "./shared";
