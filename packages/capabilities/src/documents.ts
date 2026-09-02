@@ -291,9 +291,11 @@ export const publishDocument = defineCapability({
   name: "publish_document",
   title: "Publish document",
   description:
-    "Render and publish a document. Runs the editorial lints as a hard gate: a missing image " +
-    "alt, a broken heading hierarchy or an FAQ answer absent from the visible body will refuse " +
-    "the publish and return the findings. Pass `publishAt` to schedule instead of publishing now.",
+    "Render and publish a document. Runs the editorial lints as a hard gate. Exactly three " +
+    "findings refuse a publish: a missing image alt, an FAQ answer absent from the visible body, " +
+    "and an unresolved media reference — each ships something actually broken. Everything else, " +
+    "including heading-hierarchy problems and metadata length, is returned as a warning and does " +
+    "not block. Pass `publishAt` to schedule instead of publishing now.",
   input: z.object({
     id: z.string().uuid(),
     publishAt: z.string().datetime().optional(),

@@ -1,14 +1,19 @@
 {
   "name": "@cms/media",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "sharp variants, blurhash and S3-compatible storage.",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
-  "exports": { ".": "./src/index.ts" },
-  "scripts": { "typecheck": "tsc --noEmit", "test": "vitest run --passWithNoTests" },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.734.0",
     "@aws-sdk/s3-request-presigner": "^3.734.0",
