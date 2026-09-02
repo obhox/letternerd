@@ -58,6 +58,21 @@ const schema = z.object({
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().optional(),
   CMS_REQUIRE_EMAIL_VERIFICATION: z.string().optional(),
+
+  /**
+   * Media storage. Optional as a group: the local driver is a working default
+   * for development, and refusing to boot without an S3 bucket would make the
+   * studio unusable for anyone not yet uploading images. A misconfigured S3
+   * driver surfaces on the first upload with a clear error instead.
+   */
+  MEDIA_STORAGE_DRIVER: z.enum(["s3", "local"]).optional(),
+  S3_ENDPOINT: z.string().optional(),
+  S3_REGION: z.string().optional(),
+  S3_BUCKET: z.string().optional(),
+  S3_ACCESS_KEY_ID: z.string().optional(),
+  S3_SECRET_ACCESS_KEY: z.string().optional(),
+  MEDIA_CDN_URL: z.string().optional(),
+  MEDIA_MAX_UPLOAD_BYTES: z.string().optional(),
 });
 
 const parsed = schema.safeParse(process.env);
@@ -106,6 +121,15 @@ export const env = {
   EMAIL_FROM: raw.EMAIL_FROM?.trim() || undefined,
   /** `undefined` means "let `@cms/auth` decide from NODE_ENV". */
   CMS_REQUIRE_EMAIL_VERIFICATION: optionalBoolean(raw.CMS_REQUIRE_EMAIL_VERIFICATION),
+
+  MEDIA_STORAGE_DRIVER: raw.MEDIA_STORAGE_DRIVER ?? "local",
+  S3_ENDPOINT: raw.S3_ENDPOINT?.trim() || undefined,
+  S3_REGION: raw.S3_REGION?.trim() || "auto",
+  S3_BUCKET: raw.S3_BUCKET?.trim() || undefined,
+  S3_ACCESS_KEY_ID: raw.S3_ACCESS_KEY_ID?.trim() || undefined,
+  S3_SECRET_ACCESS_KEY: raw.S3_SECRET_ACCESS_KEY?.trim() || undefined,
+  MEDIA_CDN_URL: raw.MEDIA_CDN_URL?.trim() || undefined,
+  MEDIA_MAX_UPLOAD_BYTES: Number(raw.MEDIA_MAX_UPLOAD_BYTES ?? 26_214_400),
 } as const;
 
 export type Env = typeof env;

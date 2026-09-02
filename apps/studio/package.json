@@ -13,7 +13,9 @@
     "create-account": "tsx --env-file=.env scripts/create-account.ts"
   },
   "dependencies": {
+    "@cms/analytics": "workspace:*",
     "@cms/auth": "workspace:*",
+    "@cms/capabilities": "workspace:*",
     "@cms/content": "workspace:*",
     "@cms/core": "workspace:*",
     "@cms/db": "workspace:*",

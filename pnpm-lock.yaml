@@ -23,9 +23,15 @@ importers:
 
   apps/studio:
     dependencies:
+      '@cms/analytics':
+        specifier: workspace:*
+        version: link:../../packages/analytics
       '@cms/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@cms/capabilities':
+        specifier: workspace:*
+        version: link:../../packages/capabilities
       '@cms/content':
         specifier: workspace:*
         version: link:../../packages/content
