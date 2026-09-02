@@ -1,30 +1,26 @@
+import type { PublicApiKey } from "@cms/capabilities";
+
 /**
  * The shapes the settings screens hand to their client components.
  *
- * Local rather than imported from `@cms/capabilities`, because the registry
- * index does not re-export the settings module yet — the orchestrator wires
- * that. When it does, these should be replaced by the capability's own return
- * types: a hand-copied field list typechecks happily right up until someone
- * adds a column.
+ * Derived from the capability's own types wherever one exists, so a column
+ * added to `list_api_keys` cannot leave a hand-copied field list behind — that
+ * kind of copy typechecks happily right up until the day it is wrong.
  *
- * Dates are ISO strings throughout. Server components render on the server and
- * these props cross into the browser bundle, where a `Date` becomes a value
- * that formats differently depending on whose machine rendered it.
+ * The transformation these apply is dates to ISO strings. Server components
+ * render on the server and these props cross into the browser bundle, where a
+ * `Date` formats differently depending on whose machine produced it.
  */
 
-export interface ApiKeyView {
-  id: string;
-  name: string;
-  type: string;
-  /** The only part of a key that is ever shown after creation. */
-  keyPrefix: string;
-  scopes: string[];
-  allowedOrigins: string[];
+const DATE_FIELDS = ["lastUsedAt", "expiresAt", "revokedAt", "createdAt"] as const;
+
+/** `PublicApiKey`, with its timestamps flattened for the client boundary. */
+export type ApiKeyView = Omit<PublicApiKey, (typeof DATE_FIELDS)[number]> & {
   lastUsedAt: string | null;
   expiresAt: string | null;
   revokedAt: string | null;
   createdAt: string;
-}
+};
 
 export interface MemberView {
   userId: string;

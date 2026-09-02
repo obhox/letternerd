@@ -230,6 +230,12 @@ importers:
 
   packages/capabilities:
     dependencies:
+      '@cms/analytics':
+        specifier: workspace:*
+        version: link:../analytics
+      '@cms/auth':
+        specifier: workspace:*
+        version: link:../auth
       '@cms/content':
         specifier: workspace:*
         version: link:../content

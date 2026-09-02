@@ -1,9 +1,12 @@
+import type { RuleCoverage, TimeToFirstCrawlRow } from "@cms/capabilities";
+
 /**
  * The shapes the insights screen renders.
  *
- * Local for the same reason as the settings views: the capability registry
- * index does not re-export the insights module yet. Replace these with the
- * capability's own return types once it does.
+ * Taken from the capability where it exports a named type, so the rule
+ * coverage a screen renders and the coverage a rule reports cannot drift. The
+ * rest are the parts of an inferred handler return type there is no name for
+ * yet; they transform dates to ISO strings for the client boundary.
  */
 
 export interface InsightView {
@@ -24,14 +27,7 @@ export interface InsightDocument {
   path: string;
 }
 
-export interface RuleCoverageView {
-  kind: string;
-  ran: boolean;
-  found: number;
-  needs: "first-party" | "search";
-  limitation: string | null;
-  note: string | null;
-}
+export type RuleCoverageView = RuleCoverage;
 
 export interface CoverageView {
   provider: { name: string; audience: boolean; search: boolean; error: string | null } | null;
@@ -48,16 +44,10 @@ export interface CrawlerBotSeries {
   days: { date: string; hits: number }[];
 }
 
-export interface CrawlTimingView {
-  documentId: string;
-  title: string;
-  slug: string;
+export type CrawlTimingView = Omit<TimeToFirstCrawlRow, "publishedAt" | "firstAiCrawlAt"> & {
   publishedAt: string | null;
   firstAiCrawlAt: string | null;
-  hoursToFirstCrawl: number | null;
-  state: "crawled" | "never" | "unknown";
-  unknownBecause?: string;
-}
+};
 
 export interface CrawlerActivityView {
   days: number;
