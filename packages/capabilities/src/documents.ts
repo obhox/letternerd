@@ -153,7 +153,35 @@ export const getDocument = defineCapability({
       .limit(1);
 
     if (!doc) throw notFound("Document not found.");
-    return doc;
+
+    /**
+     * Whether the live page is older than what has been saved.
+     *
+     * `contentHash` is written at publish and records the markdown that
+     * produced the HTML now being served. Saving an edit to a published
+     * document moves `bodyMd` but deliberately does not re-render, so the two
+     * diverge — and without saying so the editor shows "Published" over text
+     * that no reader has seen. An author reasonably reads that as "this is
+     * live", which is the one thing it is not.
+     *
+     * Derived rather than stored so it cannot go stale in its own right.
+     */
+    const publishedFromDifferentSource =
+      doc.contentHash !== null && doc.contentHash !== contentHash(doc.bodyMd);
+
+    return {
+      ...doc,
+      hasUnpublishedChanges:
+        (doc.status === "published" || doc.status === "scheduled") &&
+        publishedFromDifferentSource,
+      /**
+       * The rendering pipeline has moved on since this was last rendered, so
+       * the stored HTML is not what the current pipeline would produce. The
+       * backfill job clears these; surfacing it stops an author from chasing a
+       * discrepancy that is not theirs to fix.
+       */
+      renderStale: doc.renderVersion < PIPELINE_VERSION,
+    };
   },
 });
 
