@@ -2,8 +2,8 @@ import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { and, eq, gt, isNull, or } from "drizzle-orm";
 import { KEY_ROLES, KEY_SCOPES, type ApiKeyType, type Scope } from "@cms/core";
 import type { SiteRole } from "@cms/core/roles";
-import type { Database } from "./index.js";
-import * as schema from "./schema/index.js";
+import type { Database } from "./index";
+import * as schema from "./schema/index";
 
 /**
  * Server-side API key issuance and verification.

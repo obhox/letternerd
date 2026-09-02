@@ -1,8 +1,8 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import * as schema from "./schema/index.js";
+import * as schema from "./schema/index";
 
-export * as schema from "./schema/index.js";
+export * as schema from "./schema/index";
 export { schema as tables };
 
 /**

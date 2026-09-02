@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildLlmsFullTxt, buildLlmsTxt, streamLlmsFullTxt } from "../index.js";
-import { doc, draftish, site } from "./fixtures.js";
+import { buildLlmsFullTxt, buildLlmsTxt, streamLlmsFullTxt } from "../index";
+import { doc, draftish, site } from "./fixtures";
 
 describe("buildLlmsTxt", () => {
   it("matches the golden file", () => {

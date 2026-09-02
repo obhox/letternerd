@@ -1,6 +1,6 @@
-import type { JsonLdObject, SeoAuthor, SeoSite } from "../types.js";
-import { absoluteUrl, joinPath } from "../url.js";
-import { SCHEMA_CONTEXT, listOrUndefined, prune } from "./shared.js";
+import type { JsonLdObject, SeoAuthor, SeoSite } from "../types";
+import { absoluteUrl, joinPath } from "../url";
+import { SCHEMA_CONTEXT, listOrUndefined, prune } from "./shared";
 
 /**
  * Authors live at `/authors/<slug>` on the consuming site unless the author

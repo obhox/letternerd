@@ -1,5 +1,5 @@
-import type { JsonLdObject, SeoDocument } from "../types.js";
-import { SCHEMA_CONTEXT } from "./shared.js";
+import type { JsonLdObject, SeoDocument } from "../types";
+import { SCHEMA_CONTEXT } from "./shared";
 
 /**
  * The class names are a contract with the content pipeline, which wraps the

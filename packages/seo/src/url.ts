@@ -1,4 +1,4 @@
-import type { SeoDocument, SeoSite } from "./types.js";
+import type { SeoDocument, SeoSite } from "./types";
 
 /**
  * Every absolute URL this package emits is built here.

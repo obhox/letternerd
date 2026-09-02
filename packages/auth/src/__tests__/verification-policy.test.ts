@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createAuth } from "../index.js";
+import { createAuth } from "../index";
 
 /**
  * The boot-time half of the invitation escalation.

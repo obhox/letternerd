@@ -1,4 +1,4 @@
-import type { JsonLdObject } from "../types.js";
+import type { JsonLdObject } from "../types";
 
 /**
  * Serialises nodes for the inside of a `<script type="application/ld+json">`.

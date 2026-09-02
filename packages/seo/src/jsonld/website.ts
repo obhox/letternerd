@@ -1,7 +1,7 @@
-import type { JsonLdObject, SeoSite } from "../types.js";
-import { normalizeBaseUrl } from "../url.js";
-import { organizationId } from "./organization.js";
-import { SCHEMA_CONTEXT, prune } from "./shared.js";
+import type { JsonLdObject, SeoSite } from "../types";
+import { normalizeBaseUrl } from "../url";
+import { organizationId } from "./organization";
+import { SCHEMA_CONTEXT, prune } from "./shared";
 
 export function websiteId(site: SeoSite): string {
   return `${normalizeBaseUrl(site.baseUrl)}/#website`;

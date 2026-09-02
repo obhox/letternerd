@@ -11,8 +11,8 @@ import {
   speakableLd,
   truncateHeadline,
   websiteLd,
-} from "../index.js";
-import { author, doc, draftish, site } from "./fixtures.js";
+} from "../index";
+import { author, doc, draftish, site } from "./fixtures";
 
 const url = "https://spendtab.com/blog/expense-policies";
 

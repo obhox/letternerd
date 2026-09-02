@@ -1,8 +1,8 @@
 import { z } from "zod";
-import type { Actor, Scope } from "./actor.js";
-import { assertRole, assertScope } from "./actor.js";
-import type { SiteRole } from "./roles.js";
-import { invalidInput } from "./errors.js";
+import type { Actor, Scope } from "./actor";
+import { assertRole, assertScope } from "./actor";
+import type { SiteRole } from "./roles";
+import { invalidInput } from "./errors";
 
 /**
  * The capability layer.

@@ -1,5 +1,5 @@
-import type { SeoSite } from "../types.js";
-import { absoluteUrl } from "../url.js";
+import type { SeoSite } from "../types";
+import { absoluteUrl } from "../url";
 
 /**
  * robots.txt, served from the consuming site's root.

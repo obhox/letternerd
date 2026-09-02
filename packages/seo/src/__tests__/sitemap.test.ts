@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import type { SitemapEntry } from "../index.js";
+import type { SitemapEntry } from "../index";
 import {
   SITEMAP_CHUNK_SIZE,
   buildSitemap,
   buildSitemapIndex,
   chunkSitemapEntries,
   documentSitemapEntries,
-} from "../index.js";
-import { doc, draftish, site } from "./fixtures.js";
+} from "../index";
+import { doc, draftish, site } from "./fixtures";
 
 describe("buildSitemap", () => {
   it("writes every URL on the consuming origin", () => {

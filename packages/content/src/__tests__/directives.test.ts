@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { renderDocument } from "../index.js";
-import { articleInput, site } from "./fixtures.js";
+import { renderDocument } from "../index";
+import { articleInput, site } from "./fixtures";
 
 const render = (markdown: string) => renderDocument({ markdown, slug: "post", site });
 

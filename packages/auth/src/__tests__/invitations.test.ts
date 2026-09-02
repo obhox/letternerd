@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { isCmsError, type CmsErrorCode } from "@cms/core";
-import { acceptInvitation, createInvitation, hashInvitationToken } from "../invitations.js";
-import { createFakeDb } from "./fake-db.js";
+import { acceptInvitation, createInvitation, hashInvitationToken } from "../invitations";
+import { createFakeDb } from "./fake-db";
 
 const SITE_ID = "11111111-1111-4111-8111-111111111111";
 

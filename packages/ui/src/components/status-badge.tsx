@@ -1,4 +1,4 @@
-import { Badge, type BadgeVariant } from "./badge.js";
+import { Badge, type BadgeVariant } from "./badge";
 
 export const DOCUMENT_STATUSES = [
   "draft",

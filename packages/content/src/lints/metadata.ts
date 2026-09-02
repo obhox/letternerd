@@ -12,7 +12,7 @@
  * has written is noise while somebody is still typing the first paragraph.
  */
 
-import type { LintFinding } from "../types.js";
+import type { LintFinding } from "../types";
 
 export const META_DESCRIPTION_LENGTH = "meta-description-length";
 export const TITLE_LENGTH = "title-length";

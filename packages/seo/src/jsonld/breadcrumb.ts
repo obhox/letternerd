@@ -1,6 +1,6 @@
-import type { JsonLdObject, SeoBreadcrumb, SeoSite } from "../types.js";
-import { absoluteUrl } from "../url.js";
-import { SCHEMA_CONTEXT } from "./shared.js";
+import type { JsonLdObject, SeoBreadcrumb, SeoSite } from "../types";
+import { absoluteUrl } from "../url";
+import { SCHEMA_CONTEXT } from "./shared";
 
 /**
  * The trail is given as root-relative paths and absolutised here, for the same

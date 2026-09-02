@@ -1,5 +1,5 @@
-import type { SeoDocument, SeoImage, SeoSite } from "./types.js";
-import { absoluteUrl, canonicalUrlFor, documentUrl } from "./url.js";
+import type { SeoDocument, SeoImage, SeoSite } from "./types";
+import { absoluteUrl, canonicalUrlFor, documentUrl } from "./url";
 
 /**
  * The head of a document page, as plain data.

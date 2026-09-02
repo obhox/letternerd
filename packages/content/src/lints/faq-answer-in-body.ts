@@ -14,7 +14,7 @@
  * JSON-LD would go on quoting text no reader can see.
  */
 
-import type { LintFinding } from "../types.js";
+import type { LintFinding } from "../types";
 
 export const FAQ_ANSWER_IN_BODY = "faq-answer-in-body";
 

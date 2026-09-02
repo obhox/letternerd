@@ -1,4 +1,4 @@
-import type { SeoAuthor, SeoDocument, SeoSite } from "../types.js";
+import type { SeoAuthor, SeoDocument, SeoSite } from "../types";
 
 export const site: SeoSite = {
   baseUrl: "https://spendtab.com",

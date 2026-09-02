@@ -9,7 +9,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { PIPELINE_VERSION } from "./types.js";
+import { PIPELINE_VERSION } from "./types";
 
 /**
  * NUL, which a markdown body will not contain.

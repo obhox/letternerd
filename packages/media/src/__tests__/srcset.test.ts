@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_SIZES, buildPictureSources, buildSrcset } from "../index.js";
+import { DEFAULT_SIZES, buildPictureSources, buildSrcset } from "../index";
 
 const publicUrl = (key: string) => `https://cdn.test/${key}`;
 

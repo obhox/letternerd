@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { SeoSite } from "../index.js";
+import type { SeoSite } from "../index";
 import {
   absoluteUrl,
   canonicalUrlFor,
@@ -7,8 +7,8 @@ import {
   isSyndicated,
   joinPath,
   normalizeBaseUrl,
-} from "../index.js";
-import { doc, site } from "./fixtures.js";
+} from "../index";
+import { doc, site } from "./fixtures";
 
 describe("joinPath", () => {
   it("produces one leading slash and no trailing slash", () => {

@@ -10,7 +10,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { SITE_ROLES } from "@cms/core/roles";
-import { user } from "./auth.js";
+import { user } from "./auth";
 
 export const siteRoleEnum = pgEnum("site_role", SITE_ROLES);
 export const apiKeyTypeEnum = pgEnum("api_key_type", ["publishable", "read", "admin"]);

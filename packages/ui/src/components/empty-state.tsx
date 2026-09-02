@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode } from "react";
-import { cn } from "../cn.js";
+import { cn } from "../cn";
 
 export interface EmptyStateProps {
   /** A lucide icon component, e.g. `FileTextIcon`. Rendered decoratively. */

@@ -7,7 +7,7 @@
  * caller should assemble its own pipeline out of them.
  */
 
-export { PIPELINE_VERSION } from "./types.js";
+export { PIPELINE_VERSION } from "./types";
 export type {
   HeadingEntry,
   HowToBlock,
@@ -18,11 +18,11 @@ export type {
   RenderResult,
   RenderSiteContext,
   ResolvedMedia,
-} from "./types.js";
+} from "./types";
 
-export { renderDocument } from "./render.js";
+export { renderDocument } from "./render";
 
-export { contentHash } from "./hash.js";
+export { contentHash } from "./hash";
 
 export {
   BLOCKING_RULES,
@@ -42,25 +42,25 @@ export {
   TITLE_MAX,
   TITLE_MIN,
   UNRESOLVED_MEDIA_REF,
-} from "./lints/index.js";
+} from "./lints/index";
 
 export {
   HEADING_MATCH_THRESHOLD,
   reconcileHeadings,
   type HeadingDraft,
-} from "./anchors.js";
-export { levenshtein, normalizeHeadingText, similarity } from "./similarity.js";
+} from "./anchors";
+export { levenshtein, normalizeHeadingText, similarity } from "./similarity";
 
 export {
   EMBED_PROVIDERS,
   resolveEmbed,
   type EmbedInfo,
   type EmbedProvider,
-} from "./embeds.js";
+} from "./embeds";
 
-export { MEDIA_PROTOCOL, mediaId, type MediaResolver } from "./media.js";
+export { MEDIA_PROTOCOL, mediaId, type MediaResolver } from "./media";
 
-export { contentSanitizeSchema } from "./sanitize-schema.js";
+export { contentSanitizeSchema } from "./sanitize-schema";
 
 export {
   analyseReadability,
@@ -68,4 +68,4 @@ export {
   hastToText,
   readingTimeMinutes,
   type Readability,
-} from "./text.js";
+} from "./text";

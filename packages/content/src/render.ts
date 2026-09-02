@@ -40,8 +40,8 @@ import { VFile } from "vfile";
 import type { Element, Root as HastRoot } from "hast";
 import type { Root as MdastRoot } from "mdast";
 
-import { emptyHarvest, transformDirectives } from "./directives.js";
-import { contentHash } from "./hash.js";
+import { emptyHarvest, transformDirectives } from "./directives";
+import { contentHash } from "./hash";
 import {
   faqAnswerInBody,
   headingHierarchy,
@@ -50,13 +50,13 @@ import {
   readability,
   thinContent,
   type FaqAnswer,
-} from "./lints/index.js";
-import { buildPublicMarkdown } from "./md-public.js";
-import { emptyMediaHarvest, transformMedia } from "./media.js";
-import { contentSanitizeSchema } from "./sanitize-schema.js";
-import { emptyAnchorHarvest, QA_MARKER, rehypeStableAnchors } from "./stable-anchors.js";
-import { countWords, hastToText, readingTimeMinutes } from "./text.js";
-import type { LintFinding, QaBlock, RenderInput, RenderResult } from "./types.js";
+} from "./lints/index";
+import { buildPublicMarkdown } from "./md-public";
+import { emptyMediaHarvest, transformMedia } from "./media";
+import { contentSanitizeSchema } from "./sanitize-schema";
+import { emptyAnchorHarvest, QA_MARKER, rehypeStableAnchors } from "./stable-anchors";
+import { countWords, hastToText, readingTimeMinutes } from "./text";
+import type { LintFinding, QaBlock, RenderInput, RenderResult } from "./types";
 
 /**
  * One highlighter for the process.

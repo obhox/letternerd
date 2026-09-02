@@ -2,7 +2,7 @@
 
 import * as SeparatorPrimitive from "@radix-ui/react-separator";
 import type { ComponentPropsWithoutRef } from "react";
-import { cn } from "../cn.js";
+import { cn } from "../cn";
 
 export type SeparatorProps = ComponentPropsWithoutRef<typeof SeparatorPrimitive.Root>;
 

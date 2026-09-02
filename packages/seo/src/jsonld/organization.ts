@@ -1,6 +1,6 @@
-import type { JsonLdObject, SeoSite } from "../types.js";
-import { absoluteUrl, normalizeBaseUrl } from "../url.js";
-import { SCHEMA_CONTEXT, listOrUndefined, prune } from "./shared.js";
+import type { JsonLdObject, SeoSite } from "../types";
+import { absoluteUrl, normalizeBaseUrl } from "../url";
+import { SCHEMA_CONTEXT, listOrUndefined, prune } from "./shared";
 
 /**
  * The publisher, as a stable node other nodes point at.

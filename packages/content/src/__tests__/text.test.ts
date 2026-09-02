@@ -5,8 +5,8 @@ import {
   hastToText,
   readingTimeMinutes,
   renderDocument,
-} from "../index.js";
-import { articleInput, site } from "./fixtures.js";
+} from "../index";
+import { articleInput, site } from "./fixtures";
 
 describe("hastToText", () => {
   it("separates blocks, so two list items are never one sentence", () => {

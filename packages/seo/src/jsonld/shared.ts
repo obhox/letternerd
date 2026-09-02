@@ -1,4 +1,4 @@
-import type { JsonLdObject } from "../types.js";
+import type { JsonLdObject } from "../types";
 
 /** Every top-level node carries this; embedded nodes must not repeat it. */
 export const SCHEMA_CONTEXT = "https://schema.org";

@@ -3,8 +3,8 @@ import rehypeSanitize from "rehype-sanitize";
 import rehypeStringify from "rehype-stringify";
 import { unified } from "unified";
 import { describe, expect, it } from "vitest";
-import { contentSanitizeSchema, renderDocument } from "../index.js";
-import { articleInput, site } from "./fixtures.js";
+import { contentSanitizeSchema, renderDocument } from "../index";
+import { articleInput, site } from "./fixtures";
 
 const render = (markdown: string) => renderDocument({ markdown, slug: "post", site });
 

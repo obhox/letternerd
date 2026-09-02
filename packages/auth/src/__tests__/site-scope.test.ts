@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { SCOPES, can, isCmsError, type CmsErrorCode } from "@cms/core";
 import type { VerifiedKey } from "@cms/db/api-keys";
-import { actorFromApiKey, listMemberships, requireSite, type SiteRow } from "../site-scope.js";
-import { createFakeDb, fakeSite } from "./fake-db.js";
+import { actorFromApiKey, listMemberships, requireSite, type SiteRow } from "../site-scope";
+import { createFakeDb, fakeSite } from "./fake-db";
 
 const SITE_ID = "11111111-1111-4111-8111-111111111111";
 

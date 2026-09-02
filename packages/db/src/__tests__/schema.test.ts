@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, lt, or, sql } from "drizzle-orm";
+import { and, desc, eq, lt, or, sql, type SQL } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createDb, closeDb, type Database } from "../index.js";
-import { generateApiKey, keyTypeOf, verifyApiKey } from "../api-keys.js";
-import * as schema from "../schema/index.js";
+import { createDb, closeDb, type Database } from "../index";
+import { generateApiKey, keyTypeOf, verifyApiKey } from "../api-keys";
+import * as schema from "../schema/index";
 
 /**
  * Integration tests against a real Postgres.
@@ -190,7 +190,7 @@ d("keyset pagination", () => {
     let cursor: { publishedAt: Date; id: string } | null = null;
 
     for (let page = 0; page < 10; page++) {
-      const where = cursor
+      const where: SQL | undefined = cursor
         ? and(
             eq(schema.documents.siteId, s),
             eq(schema.documents.status, "published"),
@@ -204,7 +204,7 @@ d("keyset pagination", () => {
           )
         : and(eq(schema.documents.siteId, s), eq(schema.documents.status, "published"));
 
-      const rows = await db
+      const rows: { id: string; publishedAt: Date | null }[] = await db
         .select({
           id: schema.documents.id,
           publishedAt: schema.documents.publishedAt,

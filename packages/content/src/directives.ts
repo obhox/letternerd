@@ -14,9 +14,9 @@ import type { ElementContent, Properties } from "hast";
 import { toString } from "mdast-util-to-string";
 import type { Heading, List, ListItem, Root, RootContent } from "mdast";
 import { SKIP, visit } from "unist-util-visit";
-import { resolveEmbed } from "./embeds.js";
-import { applyElement, element, type BlockChild } from "./mdast-html.js";
-import type { HowToBlock, LintFinding } from "./types.js";
+import { resolveEmbed } from "./embeds";
+import { applyElement, element, type BlockChild } from "./mdast-html";
+import type { HowToBlock, LintFinding } from "./types";
 
 /**
  * Directive nodes, described structurally.

@@ -1,8 +1,8 @@
 "use client";
 
 import { useId, type ReactNode } from "react";
-import { cn } from "../cn.js";
-import { Label } from "./label.js";
+import { cn } from "../cn";
+import { Label } from "./label";
 
 export interface FieldRenderProps {
   id: string;

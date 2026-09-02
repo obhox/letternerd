@@ -7,8 +7,8 @@
  * author learns to ignore the lint — which costs more than not having it.
  */
 
-import { analyseReadability, LONG_SENTENCE_WORDS } from "../text.js";
-import type { LintFinding } from "../types.js";
+import { analyseReadability, LONG_SENTENCE_WORDS } from "../text";
+import type { LintFinding } from "../types";
 
 export const READABILITY = "readability";
 

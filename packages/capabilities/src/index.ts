@@ -10,18 +10,18 @@
 
 // Imported for its `declare module` augmentation, which is what gives handlers
 // a typed `services`. Removing this import silently untypes every handler.
-import "./services.js";
+import "./services";
 
 import { createRegistry } from "@cms/core";
-import { documentCapabilities } from "./documents.js";
-import { siteCapabilities } from "./sites.js";
+import { documentCapabilities } from "./documents";
+import { siteCapabilities } from "./sites";
 
 export const capabilities = [...siteCapabilities, ...documentCapabilities];
 
 export const registry = createRegistry(capabilities);
 
-export * from "./documents.js";
-export * from "./sites.js";
-export * from "./render.js";
-export * from "./shared.js";
-export type { Database, StorageService } from "./services.js";
+export * from "./documents";
+export * from "./sites";
+export * from "./render";
+export * from "./shared";
+export type { Database, StorageService } from "./services";

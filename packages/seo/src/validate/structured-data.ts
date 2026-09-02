@@ -1,4 +1,4 @@
-import { HEADLINE_MAX } from "../jsonld/blog-posting.js";
+import { HEADLINE_MAX } from "../jsonld/blog-posting";
 
 /**
  * Hand-written checks against Google's documented requirements.

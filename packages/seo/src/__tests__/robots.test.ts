@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { AI_CRAWLER_USER_AGENTS, buildRobotsTxt } from "../index.js";
-import { site } from "./fixtures.js";
+import { AI_CRAWLER_USER_AGENTS, buildRobotsTxt } from "../index";
+import { site } from "./fixtures";
 
 describe("buildRobotsTxt", () => {
   it("opens the site to everything and points at the sitemap absolutely", () => {

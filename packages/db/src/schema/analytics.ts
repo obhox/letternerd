@@ -10,8 +10,8 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { documents } from "./content.js";
-import { sites } from "./tenancy.js";
+import { documents } from "./content";
+import { sites } from "./tenancy";
 
 /**
  * Which crawlers actually fetched what, and when.

@@ -1,5 +1,5 @@
-import type { JsonLdObject, SeoDocument } from "../types.js";
-import { SCHEMA_CONTEXT, prune } from "./shared.js";
+import type { JsonLdObject, SeoDocument } from "../types";
+import { SCHEMA_CONTEXT, prune } from "./shared";
 
 /**
  * `null` when the document has no how-to, for the same reason `faqLd` returns

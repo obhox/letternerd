@@ -1,8 +1,8 @@
 import { betterAuth } from "better-auth";
 import pg from "pg";
 
-export * from "./site-scope.js";
-export * from "./invitations.js";
+export * from "./site-scope";
+export * from "./invitations";
 
 /**
  * Authentication for studio users, configured once and shared by every app

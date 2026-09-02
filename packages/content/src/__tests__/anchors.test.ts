@@ -6,8 +6,8 @@ import {
   renderDocument,
   similarity,
   type HeadingEntry,
-} from "../index.js";
-import { site } from "./fixtures.js";
+} from "../index";
+import { site } from "./fixtures";
 
 const entry = (over: Partial<HeadingEntry> & Pick<HeadingEntry, "text" | "id">): HeadingEntry => ({
   depth: 2,

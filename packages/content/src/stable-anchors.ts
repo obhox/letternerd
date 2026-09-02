@@ -16,8 +16,8 @@ import GithubSlugger from "github-slugger";
 import type { Element, ElementContent, Root } from "hast";
 import { toString } from "hast-util-to-string";
 import { visit } from "unist-util-visit";
-import { reconcileHeadings, type HeadingDraft } from "./anchors.js";
-import type { HeadingEntry } from "./types.js";
+import { reconcileHeadings, type HeadingDraft } from "./anchors";
+import type { HeadingEntry } from "./types";
 
 const HEADING_TAGS = new Set(["h1", "h2", "h3", "h4", "h5", "h6"]);
 

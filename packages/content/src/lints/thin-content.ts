@@ -7,7 +7,7 @@
  * accident, or a page written to occupy a keyword rather than to answer it.
  */
 
-import type { LintFinding } from "../types.js";
+import type { LintFinding } from "../types";
 
 export const THIN_CONTENT = "thin-content";
 

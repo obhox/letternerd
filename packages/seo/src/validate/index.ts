@@ -1,1 +1,1 @@
-export * from "./structured-data.js";
+export * from "./structured-data";

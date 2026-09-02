@@ -1,7 +1,7 @@
 "use client";
 
 import { Loader2Icon } from "lucide-react";
-import { cn } from "../cn.js";
+import { cn } from "../cn";
 
 export interface SpinnerProps {
   className?: string;

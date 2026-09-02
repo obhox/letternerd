@@ -1,6 +1,6 @@
-import type { SeoAuthor, SeoDocument, SeoSite } from "../types.js";
-import { absoluteUrl, canonicalUrlFor, normalizeBaseUrl } from "../url.js";
-import { cdata, escapeXml, iso8601, rfc822 } from "./xml.js";
+import type { SeoAuthor, SeoDocument, SeoSite } from "../types";
+import { absoluteUrl, canonicalUrlFor, normalizeBaseUrl } from "../url";
+import { cdata, escapeXml, iso8601, rfc822 } from "./xml";
 
 /**
  * Feeds, carrying the whole article rather than a teaser.

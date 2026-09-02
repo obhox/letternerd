@@ -1,26 +1,26 @@
-export { cn } from "./cn.js";
+export { cn } from "./cn";
 
 /* Primitives */
-export { Button, buttonVariants } from "./components/button.js";
-export type { ButtonProps, ButtonSize, ButtonVariant } from "./components/button.js";
-export { Input } from "./components/input.js";
-export type { InputProps } from "./components/input.js";
-export { Textarea } from "./components/textarea.js";
-export type { TextareaProps } from "./components/textarea.js";
-export { Label } from "./components/label.js";
-export type { LabelProps } from "./components/label.js";
-export { Checkbox } from "./components/checkbox.js";
-export type { CheckboxProps } from "./components/checkbox.js";
-export { Switch } from "./components/switch.js";
-export type { SwitchProps } from "./components/switch.js";
-export { Badge, badgeVariants } from "./components/badge.js";
-export type { BadgeProps, BadgeVariant } from "./components/badge.js";
-export { Separator } from "./components/separator.js";
-export type { SeparatorProps } from "./components/separator.js";
-export { Spinner } from "./components/spinner.js";
-export type { SpinnerProps } from "./components/spinner.js";
-export { Kbd } from "./components/kbd.js";
-export type { KbdProps } from "./components/kbd.js";
+export { Button, buttonVariants } from "./components/button";
+export type { ButtonProps, ButtonSize, ButtonVariant } from "./components/button";
+export { Input } from "./components/input";
+export type { InputProps } from "./components/input";
+export { Textarea } from "./components/textarea";
+export type { TextareaProps } from "./components/textarea";
+export { Label } from "./components/label";
+export type { LabelProps } from "./components/label";
+export { Checkbox } from "./components/checkbox";
+export type { CheckboxProps } from "./components/checkbox";
+export { Switch } from "./components/switch";
+export type { SwitchProps } from "./components/switch";
+export { Badge, badgeVariants } from "./components/badge";
+export type { BadgeProps, BadgeVariant } from "./components/badge";
+export { Separator } from "./components/separator";
+export type { SeparatorProps } from "./components/separator";
+export { Spinner } from "./components/spinner";
+export type { SpinnerProps } from "./components/spinner";
+export { Kbd } from "./components/kbd";
+export type { KbdProps } from "./components/kbd";
 
 export {
   Select,
@@ -31,14 +31,14 @@ export {
   SelectSeparator,
   SelectTrigger,
   SelectValue,
-} from "./components/select.js";
+} from "./components/select";
 export type {
   SelectContentProps,
   SelectItemProps,
   SelectLabelProps,
   SelectSeparatorProps,
   SelectTriggerProps,
-} from "./components/select.js";
+} from "./components/select";
 
 /* Overlays */
 export {
@@ -52,13 +52,13 @@ export {
   DialogPortal,
   DialogTitle,
   DialogTrigger,
-} from "./components/dialog.js";
+} from "./components/dialog";
 export type {
   DialogContentProps,
   DialogDescriptionProps,
   DialogOverlayProps,
   DialogTitleProps,
-} from "./components/dialog.js";
+} from "./components/dialog";
 
 export {
   DropdownMenu,
@@ -75,7 +75,7 @@ export {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from "./components/dropdown-menu.js";
+} from "./components/dropdown-menu";
 export type {
   DropdownMenuCheckboxItemProps,
   DropdownMenuContentProps,
@@ -85,7 +85,7 @@ export type {
   DropdownMenuSeparatorProps,
   DropdownMenuSubContentProps,
   DropdownMenuSubTriggerProps,
-} from "./components/dropdown-menu.js";
+} from "./components/dropdown-menu";
 
 export {
   Popover,
@@ -93,16 +93,16 @@ export {
   PopoverClose,
   PopoverContent,
   PopoverTrigger,
-} from "./components/popover.js";
-export type { PopoverContentProps } from "./components/popover.js";
+} from "./components/popover";
+export type { PopoverContentProps } from "./components/popover";
 
 export {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "./components/tooltip.js";
-export type { TooltipContentProps } from "./components/tooltip.js";
+} from "./components/tooltip";
+export type { TooltipContentProps } from "./components/tooltip";
 
 /* Layout and navigation */
 export {
@@ -112,28 +112,28 @@ export {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "./components/card.js";
-export { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/tabs.js";
-export type { TabsContentProps, TabsListProps, TabsTriggerProps } from "./components/tabs.js";
-export { EmptyState } from "./components/empty-state.js";
-export type { EmptyStateProps } from "./components/empty-state.js";
-export { PageHeader } from "./components/page-header.js";
-export type { PageHeaderProps } from "./components/page-header.js";
+} from "./components/card";
+export { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/tabs";
+export type { TabsContentProps, TabsListProps, TabsTriggerProps } from "./components/tabs";
+export { EmptyState } from "./components/empty-state";
+export type { EmptyStateProps } from "./components/empty-state";
+export { PageHeader } from "./components/page-header";
+export type { PageHeaderProps } from "./components/page-header";
 
 /* Data display */
-export { DataTable } from "./components/data-table.js";
+export { DataTable } from "./components/data-table";
 export type {
   DataTableAlign,
   DataTableColumn,
   DataTableProps,
-} from "./components/data-table.js";
-export { DOCUMENT_STATUSES, StatusBadge, statusLabel } from "./components/status-badge.js";
-export type { DocumentStatus, StatusBadgeProps } from "./components/status-badge.js";
-export { LintBadge } from "./components/lint-badge.js";
-export type { LintBadgeProps, LintCounts } from "./components/lint-badge.js";
-export { Toolbar, ToolbarGroup, ToolbarSeparator } from "./components/toolbar.js";
-export type { ToolbarProps } from "./components/toolbar.js";
+} from "./components/data-table";
+export { DOCUMENT_STATUSES, StatusBadge, statusLabel } from "./components/status-badge";
+export type { DocumentStatus, StatusBadgeProps } from "./components/status-badge";
+export { LintBadge } from "./components/lint-badge";
+export type { LintBadgeProps, LintCounts } from "./components/lint-badge";
+export { Toolbar, ToolbarGroup, ToolbarSeparator } from "./components/toolbar";
+export type { ToolbarProps } from "./components/toolbar";
 
 /* Forms */
-export { Field } from "./components/field.js";
-export type { FieldProps, FieldRenderProps } from "./components/field.js";
+export { Field } from "./components/field";
+export type { FieldProps, FieldRenderProps } from "./components/field";

@@ -16,8 +16,8 @@
 import type { ElementContent, Properties } from "hast";
 import type { Image, Paragraph, Root, RootContent } from "mdast";
 import { SKIP, visit } from "unist-util-visit";
-import { applyElement, rawElement } from "./mdast-html.js";
-import type { LintFinding, ResolvedMedia } from "./types.js";
+import { applyElement, rawElement } from "./mdast-html";
+import type { LintFinding, ResolvedMedia } from "./types";
 
 export const MEDIA_PROTOCOL = "media://";
 

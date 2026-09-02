@@ -10,9 +10,9 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { user } from "./auth.js";
-import { documents } from "./content.js";
-import { sites } from "./tenancy.js";
+import { user } from "./auth";
+import { documents } from "./content";
+import { sites } from "./tenancy";
 
 export const importJobs = pgTable(
   "import_jobs",

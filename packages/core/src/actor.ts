@@ -1,6 +1,6 @@
-import type { SiteRole } from "./roles.js";
-import { can, atLeast } from "./roles.js";
-import { forbidden } from "./errors.js";
+import type { SiteRole } from "./roles";
+import { can, atLeast } from "./roles";
+import { forbidden } from "./errors";
 
 /**
  * Scopes are what an API key carries; roles are what a person holds.

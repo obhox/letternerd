@@ -9,8 +9,8 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { user } from "./auth.js";
-import { sites } from "./tenancy.js";
+import { user } from "./auth";
+import { sites } from "./tenancy";
 
 export const mediaFolders = pgTable(
   "media_folders",

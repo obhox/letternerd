@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { mcpAnnotations } from "@cms/core";
-import { capabilities, registry } from "../index.js";
+import { capabilities, registry } from "../index";
 
 /**
  * The guard that keeps "MCP-first" true.

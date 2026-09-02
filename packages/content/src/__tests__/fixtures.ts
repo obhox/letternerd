@@ -7,7 +7,7 @@
  * bug an isolated test never sees.
  */
 
-import type { RenderInput, RenderSiteContext, ResolvedMedia } from "../types.js";
+import type { RenderInput, RenderSiteContext, ResolvedMedia } from "../types";
 
 export const site: RenderSiteContext = {
   baseUrl: "https://spendtab.com",

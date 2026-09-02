@@ -1,7 +1,7 @@
-import type { JsonLdObject, SeoDocument, SeoSite } from "../types.js";
-import { absoluteUrl, canonicalUrlFor } from "../url.js";
-import { SCHEMA_CONTEXT, prune } from "./shared.js";
-import { websiteId } from "./website.js";
+import type { JsonLdObject, SeoDocument, SeoSite } from "../types";
+import { absoluteUrl, canonicalUrlFor } from "../url";
+import { SCHEMA_CONTEXT, prune } from "./shared";
+import { websiteId } from "./website";
 
 export interface CollectionPageOptions {
   /** What this listing is called: "Blog", "Posts tagged Pricing", an author's name. */

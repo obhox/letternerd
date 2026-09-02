@@ -9,8 +9,8 @@
 
 import type { Root } from "mdast";
 import { SKIP, visit } from "unist-util-visit";
-import { isDirective } from "../directives.js";
-import type { LintFinding } from "../types.js";
+import { isDirective } from "../directives";
+import type { LintFinding } from "../types";
 
 export const HEADING_HIERARCHY = "heading-hierarchy";
 

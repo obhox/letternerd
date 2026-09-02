@@ -10,8 +10,8 @@ import {
 } from "@cms/core";
 import { contentHash, hasBlockingFindings, PIPELINE_VERSION } from "@cms/content";
 import * as schema from "@cms/db/schema";
-import { renderForSite } from "./render.js";
-import { requireSiteRow, cdnUrlFactory, encodeCursor, decodeCursor } from "./shared.js";
+import { renderForSite } from "./render";
+import { requireSiteRow, cdnUrlFactory, encodeCursor, decodeCursor } from "./shared";
 
 /**
  * Document capabilities.

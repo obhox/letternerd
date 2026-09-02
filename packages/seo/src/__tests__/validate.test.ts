@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ValidationIssue } from "../index.js";
+import type { ValidationIssue } from "../index";
 import {
   blogPostingLd,
   faqLd,
@@ -7,8 +7,8 @@ import {
   howToLd,
   speakableLd,
   validateStructuredData,
-} from "../index.js";
-import { bodyText, doc, site } from "./fixtures.js";
+} from "../index";
+import { bodyText, doc, site } from "./fixtures";
 
 const errors = (issues: ValidationIssue[]) => issues.filter((issue) => issue.severity === "error");
 const at = (issues: ValidationIssue[], property: string) =>

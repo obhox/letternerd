@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { openGraphLocale, pageMetadataFields } from "../index.js";
-import { doc, draftish, site } from "./fixtures.js";
+import { openGraphLocale, pageMetadataFields } from "../index";
+import { doc, draftish, site } from "./fixtures";
 
 describe("pageMetadataFields", () => {
   it("matches the golden object", () => {

@@ -1,5 +1,5 @@
-import type { JsonLdObject, SeoDocument } from "../types.js";
-import { SCHEMA_CONTEXT } from "./shared.js";
+import type { JsonLdObject, SeoDocument } from "../types";
+import { SCHEMA_CONTEXT } from "./shared";
 
 /**
  * FAQ markup for the question-and-answer pairs the content pipeline extracted.

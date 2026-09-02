@@ -9,7 +9,7 @@ import {
   VARIANT_WIDTHS,
   checksumOf,
   processUpload,
-} from "../index.js";
+} from "../index";
 
 interface StoredObject {
   body: Buffer;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, generateOgImage } from "../index.js";
+import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, generateOgImage } from "../index";
 
 describe("generateOgImage", () => {
   it("is a fixed interface with no implementation yet", async () => {

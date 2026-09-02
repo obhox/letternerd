@@ -4,8 +4,8 @@ import { invalidInput } from "@cms/core";
 import { encode as encodeBlurhash } from "blurhash";
 import sharp from "sharp";
 
-import { IMMUTABLE_CACHE_CONTROL, originalKey, variantKey } from "./keys.js";
-import type { StorageService } from "./storage.js";
+import { IMMUTABLE_CACHE_CONTROL, originalKey, variantKey } from "./keys";
+import type { StorageService } from "./storage";
 
 /**
  * The rendition ladder.

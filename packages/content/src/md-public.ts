@@ -21,9 +21,9 @@ import type { Options as ToMarkdownOptions } from "mdast-util-to-markdown";
 import type { Heading, List, ListItem, Paragraph, Root, RootContent } from "mdast";
 import remarkGfm from "remark-gfm";
 import { unified } from "unified";
-import { isDirective, type DirectiveNode } from "./directives.js";
-import { mediaId, type MediaResolver } from "./media.js";
-import type { RenderSiteContext } from "./types.js";
+import { isDirective, type DirectiveNode } from "./directives";
+import { mediaId, type MediaResolver } from "./media";
+import type { RenderSiteContext } from "./types";
 
 /**
  * GFM's serialiser extensions, borrowed from a processor rather than imported.

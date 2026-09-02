@@ -1,6 +1,6 @@
-import type { SeoDocument, SeoSite } from "../types.js";
-import { absoluteUrl, documentPath, isSyndicated } from "../url.js";
-import { escapeXml, iso8601 } from "./xml.js";
+import type { SeoDocument, SeoSite } from "../types";
+import { absoluteUrl, documentPath, isSyndicated } from "../url";
+import { escapeXml, iso8601 } from "./xml";
 
 /**
  * The sitemap, and the clearest case for why this package exists.

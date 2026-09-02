@@ -13,10 +13,10 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { user } from "./auth.js";
-import { authors } from "./authors.js";
-import { sites } from "./tenancy.js";
-import { tsvector } from "./types.js";
+import { user } from "./auth";
+import { authors } from "./authors";
+import { sites } from "./tenancy";
+import { tsvector } from "./types";
 
 export const documentTypeEnum = pgEnum("document_type", ["post", "page", "block"]);
 export const documentStatusEnum = pgEnum("document_status", [

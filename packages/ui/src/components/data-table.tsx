@@ -1,7 +1,7 @@
 "use client";
 
 import type { KeyboardEvent, ReactNode } from "react";
-import { cn } from "../cn.js";
+import { cn } from "../cn";
 
 export type DataTableAlign = "left" | "center" | "right";
 

@@ -13,8 +13,8 @@
  * not an implementation detail, and nothing here ever removes one.
  */
 
-import { similarity } from "./similarity.js";
-import type { HeadingEntry } from "./types.js";
+import { similarity } from "./similarity";
+import type { HeadingEntry } from "./types";
 
 /** A heading as it comes out of the tree, before reconciliation. */
 export interface HeadingDraft {

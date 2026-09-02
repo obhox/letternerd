@@ -4,8 +4,8 @@ import {
   hasBlockingFindings,
   renderDocument,
   type LintFinding,
-} from "../index.js";
-import { articleInput, resolveMedia, site } from "./fixtures.js";
+} from "../index";
+import { articleInput, resolveMedia, site } from "./fixtures";
 
 const render = (markdown: string, over: Parameters<typeof renderDocument>[0] | object = {}) =>
   renderDocument({ markdown, slug: "post", site, ...over });

@@ -11,9 +11,9 @@
  * warnings without those quietly becoming publish-stoppers.
  */
 
-import type { LintFinding } from "../types.js";
-import { FAQ_ANSWER_IN_BODY } from "./faq-answer-in-body.js";
-import { IMAGE_ALT_REQUIRED } from "./image-alt.js";
+import type { LintFinding } from "../types";
+import { FAQ_ANSWER_IN_BODY } from "./faq-answer-in-body";
+import { IMAGE_ALT_REQUIRED } from "./image-alt";
 
 /** Emitted by the media transform, which is where resolution actually fails. */
 export const UNRESOLVED_MEDIA_REF = "unresolved-media-ref";
@@ -35,8 +35,8 @@ export function hasBlockingFindings(findings: readonly LintFinding[]): boolean {
   return findings.some(isBlocking);
 }
 
-export { headingHierarchy, HEADING_HIERARCHY } from "./heading-hierarchy.js";
-export { imageAltRequired, IMAGE_ALT_REQUIRED } from "./image-alt.js";
+export { headingHierarchy, HEADING_HIERARCHY } from "./heading-hierarchy";
+export { imageAltRequired, IMAGE_ALT_REQUIRED } from "./image-alt";
 export {
   metadataLengths,
   META_DESCRIPTION_LENGTH,
@@ -45,11 +45,11 @@ export {
   DESCRIPTION_MAX,
   TITLE_MIN,
   TITLE_MAX,
-} from "./metadata.js";
-export { readability, READABILITY, MIN_READING_EASE } from "./readability.js";
+} from "./metadata";
+export { readability, READABILITY, MIN_READING_EASE } from "./readability";
 export {
   faqAnswerInBody,
   FAQ_ANSWER_IN_BODY,
   type FaqAnswer,
-} from "./faq-answer-in-body.js";
-export { thinContent, THIN_CONTENT, MIN_WORDS } from "./thin-content.js";
+} from "./faq-answer-in-body";
+export { thinContent, THIN_CONTENT, MIN_WORDS } from "./thin-content";

@@ -12,9 +12,9 @@
  * clock.
  */
 
-export * from "./types.js";
-export * from "./url.js";
-export * from "./jsonld/index.js";
-export * from "./validate/index.js";
-export * from "./artifacts/index.js";
-export * from "./metadata.js";
+export * from "./types";
+export * from "./url";
+export * from "./jsonld/index";
+export * from "./validate/index";
+export * from "./artifacts/index";
+export * from "./metadata";

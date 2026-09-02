@@ -14,7 +14,7 @@ import {
   originalKey,
   parseMediaRef,
   variantKey,
-} from "../index.js";
+} from "../index";
 
 const roots: string[] = [];
 

@@ -1,5 +1,5 @@
-import type { SeoDocument, SeoSite } from "../types.js";
-import { canonicalUrlFor } from "../url.js";
+import type { SeoDocument, SeoSite } from "../types";
+import { canonicalUrlFor } from "../url";
 
 /**
  * `llms.txt` and `llms-full.txt`, served from the consuming site's root.

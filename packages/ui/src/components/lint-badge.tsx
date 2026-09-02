@@ -1,5 +1,5 @@
 import { AlertTriangleIcon, CheckIcon, CircleAlertIcon } from "lucide-react";
-import { Badge } from "./badge.js";
+import { Badge } from "./badge";
 
 export interface LintCounts {
   errors: number;

@@ -11,7 +11,7 @@ import {
   defineCapability,
   isCmsError,
   rankOf,
-} from "../index.js";
+} from "../index";
 
 function actor(over: Partial<Actor> = {}): Actor {
   return {

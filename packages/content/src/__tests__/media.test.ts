@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { EMBED_PROVIDERS, mediaId, renderDocument, resolveEmbed } from "../index.js";
-import { resolveMedia, site } from "./fixtures.js";
+import { EMBED_PROVIDERS, mediaId, renderDocument, resolveEmbed } from "../index";
+import { resolveMedia, site } from "./fixtures";
 
 const render = (markdown: string) =>
   renderDocument({ markdown, slug: "post", site, resolveMedia });

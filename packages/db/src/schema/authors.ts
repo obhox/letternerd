@@ -8,8 +8,8 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { user } from "./auth.js";
-import { sites } from "./tenancy.js";
+import { user } from "./auth";
+import { sites } from "./tenancy";
 
 /**
  * A byline, deliberately not a login account.

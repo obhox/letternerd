@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { KEY_SCOPES } from "@cms/core";
-import { createDb, closeDb } from "./index.js";
-import { generateApiKey } from "./api-keys.js";
-import * as schema from "./schema/index.js";
+import { createDb, closeDb } from "./index";
+import { generateApiKey } from "./api-keys";
+import * as schema from "./schema/index";
 
 /**
  * A development seed with two sites.

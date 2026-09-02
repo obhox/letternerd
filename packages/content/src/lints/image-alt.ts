@@ -10,8 +10,8 @@
 
 import type { Root } from "mdast";
 import { visit } from "unist-util-visit";
-import { mediaId, type MediaResolver } from "../media.js";
-import type { LintFinding } from "../types.js";
+import { mediaId, type MediaResolver } from "../media";
+import type { LintFinding } from "../types";
 
 export const IMAGE_ALT_REQUIRED = "image-alt-required";
 

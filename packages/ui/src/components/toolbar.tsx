@@ -1,8 +1,8 @@
 "use client";
 
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
-import { cn } from "../cn.js";
-import { Separator } from "./separator.js";
+import { cn } from "../cn";
+import { Separator } from "./separator";
 
 export interface ToolbarProps extends Omit<ComponentPropsWithoutRef<"div">, "role"> {
   /**

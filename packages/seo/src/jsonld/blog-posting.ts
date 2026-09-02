@@ -1,8 +1,8 @@
-import type { JsonLdObject, SeoDocument, SeoEntity, SeoImage, SeoSite } from "../types.js";
-import { absoluteUrl, canonicalUrlFor } from "../url.js";
-import { organizationNode } from "./organization.js";
-import { personNode } from "./person.js";
-import { SCHEMA_CONTEXT, listOrUndefined, prune } from "./shared.js";
+import type { JsonLdObject, SeoDocument, SeoEntity, SeoImage, SeoSite } from "../types";
+import { absoluteUrl, canonicalUrlFor } from "../url";
+import { organizationNode } from "./organization";
+import { personNode } from "./person";
+import { SCHEMA_CONTEXT, listOrUndefined, prune } from "./shared";
 
 /**
  * Google truncates a headline past this and the Rich Results test reports it

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildAtom, buildJsonFeed, buildRss, escapeXml, rfc822 } from "../index.js";
-import { doc, draftish, site } from "./fixtures.js";
+import { buildAtom, buildJsonFeed, buildRss, escapeXml, rfc822 } from "../index";
+import { doc, draftish, site } from "./fixtures";
 
 const hostile = {
   ...doc,

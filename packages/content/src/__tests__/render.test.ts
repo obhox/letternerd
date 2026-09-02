@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { PIPELINE_VERSION, contentHash, renderDocument } from "../index.js";
-import { ARTICLE, articleInput, site } from "./fixtures.js";
+import { PIPELINE_VERSION, contentHash, renderDocument } from "../index";
+import { ARTICLE, articleInput, site } from "./fixtures";
 
 describe("renderDocument", () => {
   it("produces byte-identical output on repeated runs", async () => {

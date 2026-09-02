@@ -2,7 +2,7 @@ import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { defineCapability } from "@cms/core";
 import * as schema from "@cms/db/schema";
-import { requireSiteRow } from "./shared.js";
+import { requireSiteRow } from "./shared";
 
 /**
  * Site capabilities.
