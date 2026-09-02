@@ -19,9 +19,23 @@ const nextConfig = {
   // build. sharp in particular has to resolve its platform binary at runtime.
   serverExternalPackages: ["sharp", "postgres", "pg", "better-auth", "shiki"],
 
+  /**
+   * Upload bodies must clear the base64 ceiling, not the image one.
+   *
+   * MEDIA_MAX_UPLOAD_BYTES is 25 MB of image, but the transport is base64 —
+   * four characters per three bytes — so the request body is about 33 MB.
+   * Next's 10 MB default silently TRUNCATES rather than rejecting, which means
+   * an 8 MB photo arrives as a corrupt half-file and fails somewhere much less
+   * obvious than the upload. 36 MB leaves headroom for the JSON envelope.
+   *
+   * The limits are deliberately stated in one place; raising the image limit
+   * without raising these reintroduces the same silent truncation.
+   */
   experimental: {
-    // Uploads are multipart and can reach the media size limit.
-    serverActions: { bodySizeLimit: "26mb" },
+    serverActions: { bodySizeLimit: "36mb" },
+    // Next names this under experimental; middlewareClientMaxBodySize is the
+    // deprecated spelling of the same setting.
+    proxyClientMaxBodySize: "36mb",
   },
 
   // Nothing here is ever indexed: the studio is an admin surface, and the
