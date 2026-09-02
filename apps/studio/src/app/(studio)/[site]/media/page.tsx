@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AlertTriangleIcon } from "lucide-react";
 import { can } from "@cms/core/roles";
-import { cdnUrlFactory } from "@cms/capabilities";
+import { cdnUrlFactory, type MediaAssetView } from "@cms/capabilities";
 import { buildSrcset } from "@cms/media";
 import { Badge, Button, PageHeader, cn } from "@cms/ui";
 import { dispatchOrThrow, studioContext } from "@/server/context";
@@ -13,25 +13,14 @@ import type { MediaCardAsset } from "@/components/media/types";
 
 export const metadata: Metadata = { title: "Media" };
 
-/** Mirrors `list_media`'s return shape; the capability package does not re-export it. */
+/**
+ * The capability's own return shape, imported rather than restated.
+ *
+ * A local copy of these fields would typecheck happily for exactly as long as
+ * it took someone to add a column to `list_media`.
+ */
 interface ListMediaResult {
-  assets: {
-    id: string;
-    ref: string;
-    key: string;
-    originalFilename: string | null;
-    mimeType: string;
-    bytes: number;
-    width: number | null;
-    height: number | null;
-    blurhash: string | null;
-    dominantColor: string | null;
-    alt: string | null;
-    caption: string | null;
-    credit: string | null;
-    createdAt: Date;
-    variants: { key: string; width: number; height: number; format: string }[];
-  }[];
+  assets: MediaAssetView[];
   missingAltCount: number;
   nextCursor: string | null;
 }
