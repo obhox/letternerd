@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
+import { eq } from "drizzle-orm";
 import {
   conflict,
   forbidden,
@@ -110,23 +111,6 @@ export async function createInvitation(args: CreateInvitationArgs): Promise<Issu
   return { id: row.id, siteId: row.siteId, email: row.email, role: row.role, token, expiresAt };
 }
 
-/**
- * Drizzle's comparison operators, taken from the query that reads the invitation.
- *
- * This package holds no direct `drizzle-orm` dependency: the ORM version is
- * `@cms/db`'s to choose, and a second copy resolved here is how one
- * transaction ends up half-built by two versions of the same query builder.
- * The relational query builder hands its operators to every `where` callback,
- * so the one statement below that needs `eq` outside a callback keeps the
- * reference the read was already given.
- */
-type FindFirstArgs = NonNullable<
-  Parameters<Database["query"]["siteInvitations"]["findFirst"]>[0]
->;
-type QueryOperators = Parameters<
-  Extract<FindFirstArgs["where"], (...a: never[]) => unknown>
->[1];
-
 export interface AcceptInvitationArgs {
   db: Database;
   /** The plaintext from the link. */
@@ -163,14 +147,9 @@ export async function acceptInvitation(
   const tokenHash = hashInvitationToken(token);
 
   return db.transaction(async (tx) => {
-    let operators: QueryOperators | undefined;
-
     const invitation = await tx.query.siteInvitations.findFirst({
-      where: (i, ops) => {
-        operators = ops;
-        // Looked up by digest, so the plaintext never reaches a query log.
-        return ops.eq(i.tokenHash, tokenHash);
-      },
+      // Looked up by digest, so the plaintext never reaches a query log.
+      where: (i, ops) => ops.eq(i.tokenHash, tokenHash),
     });
 
     // An unknown digest is not evidence of anything: a mistyped link and a
@@ -222,13 +201,10 @@ export async function acceptInvitation(
        */
       .onConflictDoNothing();
 
-    // Set by the callback above, which the read cannot have skipped.
-    if (!operators) throw conflict("The invitation could not be redeemed.");
-
     await tx
       .update(schema.siteInvitations)
       .set({ acceptedAt: new Date() })
-      .where(operators.eq(schema.siteInvitations.id, invitation.id));
+      .where(eq(schema.siteInvitations.id, invitation.id));
 
     return { siteId: invitation.siteId, role: invitation.role };
   });
