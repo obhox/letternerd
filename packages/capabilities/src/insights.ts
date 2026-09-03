@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, asc, eq, gte, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import { defineCapability, type AnyCapability } from "@cms/core";
 import {
   INSIGHT_KINDS,
@@ -844,4 +844,137 @@ export function createInsightsCapabilities(deps: InsightsDeps = {}): AnyCapabili
   return [createGetCrawlerHits(), createListInsights(deps)];
 }
 
-export const insightsCapabilities = createInsightsCapabilities();
+
+/**
+ * The write half of crawler analytics.
+ *
+ * Everything else in this module reads `crawler_hits`; nothing filled it. The
+ * SDK's `logCrawlerHit` posts here from the consuming site's middleware, which
+ * is the only place that can see the request — the CMS never serves those pages,
+ * so a bot fetching an article is invisible to it by design.
+ *
+ * Scoped to `analytics:write`, which publishable keys carry: this is the one
+ * write a browser-safe key is allowed to make, and it can only ever append a
+ * hit to its own site.
+ */
+
+/** Matched case-insensitively against the user agent, longest token first. */
+const BOT_SIGNATURES: { match: string; name: string; category: string }[] = [
+  { match: "claude-searchbot", name: "Claude-SearchBot", category: "ai" },
+  { match: "claude-user", name: "Claude-User", category: "ai" },
+  { match: "claudebot", name: "ClaudeBot", category: "ai" },
+  { match: "oai-searchbot", name: "OAI-SearchBot", category: "ai" },
+  { match: "chatgpt-user", name: "ChatGPT-User", category: "ai" },
+  { match: "gptbot", name: "GPTBot", category: "ai" },
+  { match: "perplexity-user", name: "Perplexity-User", category: "ai" },
+  { match: "perplexitybot", name: "PerplexityBot", category: "ai" },
+  { match: "google-extended", name: "Google-Extended", category: "ai" },
+  { match: "applebot-extended", name: "Applebot-Extended", category: "ai" },
+  { match: "meta-externalagent", name: "meta-externalagent", category: "ai" },
+  { match: "bytespider", name: "Bytespider", category: "ai" },
+  { match: "ccbot", name: "CCBot", category: "ai" },
+  { match: "amazonbot", name: "Amazonbot", category: "ai" },
+  { match: "googlebot", name: "Googlebot", category: "search" },
+  { match: "bingbot", name: "bingbot", category: "search" },
+  { match: "duckduckbot", name: "DuckDuckBot", category: "search" },
+  { match: "applebot", name: "Applebot", category: "search" },
+];
+
+export function classifyUserAgent(
+  userAgent: string,
+): { name: string; category: string } | null {
+  const ua = userAgent.toLowerCase();
+  for (const sig of BOT_SIGNATURES) {
+    if (ua.includes(sig.match)) return { name: sig.name, category: sig.category };
+  }
+  return null;
+}
+
+export const ingestCrawlerHits = defineCapability({
+  name: "ingest_crawler_hits",
+  title: "Record crawler hits",
+  description:
+    "Append bot fetches observed on the consuming site. Requests whose user agent is not a " +
+    "recognised crawler are discarded rather than stored, so this cannot become a visitor log. " +
+    "Paths are matched to documents by slug where possible. Safe to call from a publishable key.",
+  input: z.object({
+    hits: z
+      .array(
+        z.object({
+          path: z.string().min(1).max(2048),
+          userAgent: z.string().min(1).max(1024),
+          statusCode: z.number().int().min(100).max(599).optional(),
+          referer: z.string().max(2048).optional(),
+          occurredAt: z.string().datetime().optional(),
+        }),
+      )
+      .min(1)
+      // Bounded so a single request cannot be used to bulk-insert.
+      .max(200),
+  }),
+  scopes: ["analytics:write"],
+  role: "author",
+  route: { method: "POST", path: "/insights/crawler-hits" },
+  handler: async (input, { actor, services }) => {
+    const now = services.now();
+
+    /**
+     * Only recognised bots are stored.
+     *
+     * Discarding everything else is what keeps this table from quietly becoming
+     * a record of human visitors, which is a different thing with different
+     * obligations and is not what anyone consented to by loading a blog post.
+     */
+    const recognised = input.hits.flatMap((hit) => {
+      const bot = classifyUserAgent(hit.userAgent);
+      if (!bot) return [];
+      const path = hit.path.split("?")[0]!.replace(/\/+$/, "") || "/";
+      return [{ ...hit, path, bot }];
+    });
+
+    if (recognised.length === 0) {
+      return { accepted: 0, discarded: input.hits.length, matchedDocuments: 0 };
+    }
+
+    // One query for the whole batch rather than one per hit.
+    const slugs = [...new Set(recognised.map((h) => h.path.split("/").pop() ?? ""))].filter(Boolean);
+    const docs = slugs.length
+      ? await services.db
+          .select({ id: schema.documents.id, slug: schema.documents.slug })
+          .from(schema.documents)
+          .where(
+            and(
+              eq(schema.documents.siteId, actor.siteId),
+              inArray(schema.documents.slug, slugs),
+              isNull(schema.documents.deletedAt),
+            ),
+          )
+      : [];
+    const bySlug = new Map(docs.map((d) => [d.slug, d.id]));
+
+    await services.db.insert(schema.crawlerHits).values(
+      recognised.map((h) => ({
+        siteId: actor.siteId,
+        documentId: bySlug.get(h.path.split("/").pop() ?? "") ?? null,
+        botName: h.bot.name,
+        botCategory: h.bot.category,
+        userAgent: h.userAgent.slice(0, 1024),
+        path: h.path,
+        statusCode: h.statusCode ?? null,
+        referer: h.referer ?? null,
+        // No IP is accepted at all. The consuming site holds it, and a hash
+        // would still be a per-visitor identifier we have no need for.
+        ipHash: null,
+        occurredAt: h.occurredAt ? new Date(h.occurredAt) : now,
+      })),
+    );
+
+    return {
+      accepted: recognised.length,
+      discarded: input.hits.length - recognised.length,
+      matchedDocuments: recognised.filter((h) => bySlug.has(h.path.split("/").pop() ?? "")).length,
+    };
+  },
+});
+
+export const insightsCapabilities = [...createInsightsCapabilities(), ingestCrawlerHits];

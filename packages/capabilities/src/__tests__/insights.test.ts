@@ -550,11 +550,32 @@ describe("get_crawler_hits", () => {
     expect(result.timeToFirstCrawl.unknownCount).toBe(0);
   });
 
-  it("is read-only and asks only for analytics:read", () => {
-    for (const cap of insightsCapabilities) {
-      expect(cap.readOnly).toBe(true);
+  /**
+   * The reading surface stays read-only.
+   *
+   * `ingest_crawler_hits` is the single deliberate exception — the consuming
+   * site has to be able to append what it observed, since the CMS never serves
+   * those pages and cannot see a bot fetch for itself. Naming it explicitly
+   * keeps the guarantee: a second write appearing here fails this test rather
+   * than quietly widening what an analytics credential can do.
+   */
+  it("exposes exactly one write, and it is the crawler ingest", () => {
+    const writes = insightsCapabilities.filter((cap) => !cap.readOnly);
+    expect(writes.map((cap) => cap.name)).toEqual(["ingest_crawler_hits"]);
+  });
+
+  it("keeps every reading capability on analytics:read alone", () => {
+    for (const cap of insightsCapabilities.filter((c) => c.readOnly)) {
       expect(cap.scopes).toEqual(["analytics:read"]);
       expect(cap.role).toBe("author");
     }
+  });
+
+  it("lets the ingest write nothing beyond analytics", () => {
+    const ingest = insightsCapabilities.find((c) => c.name === "ingest_crawler_hits")!;
+    // A publishable key ships in a browser bundle, so this is the widest thing
+    // such a key can reach. It must not accumulate content or media scopes.
+    expect(ingest.scopes).toEqual(["analytics:write"]);
+    expect(ingest.role).toBe("author");
   });
 });

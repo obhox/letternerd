@@ -1,0 +1,32 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    /**
+     * No `rootDir`: the two aliases below deliberately resolve to files in
+     * sibling packages, which a `rootDir` of `./src` would reject. Nothing is
+     * emitted from here — tsup owns the build — so the setting has no other job.
+     */
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "lib": ["ES2023", "DOM"],
+    "types": ["node"],
+    "baseUrl": ".",
+    /**
+     * The workspace SEO package is source-only and is inlined into the
+     * published bundle (see `noExternal` in tsup.config.ts), so it is aliased
+     * rather than resolved as a runtime dependency: a consuming site cannot
+     * install `@cms/seo`, and a bare import that survived into `dist` would
+     * fail at their `next build` rather than at ours.
+     *
+     * `@cms/media/srcset` is aliased to that one file deliberately. The media
+     * package's entry point pulls in sharp and the S3 client, neither of which
+     * belongs anywhere near a consuming site's render path; `srcset.ts` itself
+     * imports nothing at all.
+     */
+    "paths": {
+      "@cms/seo": ["../seo/src/index.ts"],
+      "@cms/media/srcset": ["../media/src/srcset.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
+}

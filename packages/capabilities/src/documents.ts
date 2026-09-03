@@ -23,6 +23,9 @@ import { requireSiteRow, cdnUrlFactory, encodeCursor, decodeCursor } from "./sha
 
 const documentType = z.enum(["post", "page", "block"]);
 
+/** Cheap enough to test before deciding which column a reference addresses. */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
  * Reads are always scoped to the actor's site, and additionally to published
  * documents when the credential is a publishable one.
@@ -125,27 +128,47 @@ export const getDocument = defineCapability({
   description:
     "Fetch one document by id or slug, including its markdown source, rendered HTML, " +
     "heading anchors and current lint findings.",
-  input: z.object({
-    id: z.string().uuid().optional(),
-    slug: z.string().optional(),
-    type: documentType.default("post"),
-  }).refine((v) => v.id || v.slug, { message: "Provide either `id` or `slug`." }),
+  /**
+   * `ref` is a uuid or a slug, and the route binds the path segment to it.
+   *
+   * The path previously bound `:id`, typed as a uuid — so the only address the
+   * REST surface actually accepted was an internal identifier, and
+   * `/documents/cash-flow-basics` answered 422. A consuming site addresses
+   * posts by slug, because that is what appears in its URLs; requiring it to
+   * know a uuid first would mean an extra round trip on every page render.
+   * `id` and `slug` are kept as explicit alternatives for callers that know
+   * which they hold.
+   */
+  input: z
+    .object({
+      ref: z.string().min(1).optional(),
+      id: z.string().uuid().optional(),
+      slug: z.string().optional(),
+      type: documentType.default("post"),
+    })
+    .refine((v) => v.ref || v.id || v.slug, {
+      message: "Provide `ref` (a slug or id), or `id`, or `slug`.",
+    }),
   scopes: ["content:read"],
   role: "author",
   readOnly: true,
   idempotent: true,
-  route: { method: "GET", path: "/documents/:id" },
+  route: { method: "GET", path: "/documents/:ref" },
   handler: async (input, { actor, services }) => {
+    // A ref that parses as a uuid is one; anything else can only be a slug.
+    const asId = input.id ?? (input.ref && UUID_RE.test(input.ref) ? input.ref : undefined);
+    const asSlug = input.slug ?? (input.ref && !UUID_RE.test(input.ref) ? input.ref : undefined);
+
     const [doc] = await services.db
       .select()
       .from(schema.documents)
       .where(
         and(
           visibilityWhere(actor),
-          input.id
-            ? eq(schema.documents.id, input.id)
+          asId
+            ? eq(schema.documents.id, asId)
             : and(
-                eq(schema.documents.slug, input.slug!),
+                eq(schema.documents.slug, asSlug!),
                 eq(schema.documents.type, input.type),
               )!,
         ),

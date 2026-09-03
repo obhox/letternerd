@@ -277,9 +277,6 @@ export function readGoogleCredentials(
   return { clientId, clientSecret };
 }
 
-/** The single scope this integration asks for: read-only Search Console. */
-export const SEARCH_CONSOLE_SCOPE = "https://www.googleapis.com/auth/webmasters.readonly";
-
 /**
  * Refresh this far before the recorded expiry rather than at it.
  *
