@@ -38,7 +38,14 @@ services:
       DATABASE_URL: ${DATABASE_URL}
 
       BETTER_AUTH_SECRET: ${SERVICE_BASE64_64_AUTH}
-      CMS_STUDIO_URL: ${SERVICE_FQDN_STUDIO}
+      # SERVICE_URL_STUDIO, not SERVICE_FQDN_STUDIO. Coolify regenerates both on
+      # every deploy from the domain set on the service: the FQDN is the bare
+      # host, the URL carries the scheme. This value is a base URL — better-auth
+      # constructs sign-in and callback URLs from it and throws
+      # "Invalid base URL" on a schemeless host, which takes down authentication
+      # while /api/health still answers ok. Setting the FQDN variable by hand
+      # does not survive, since the deploy overwrites it.
+      CMS_STUDIO_URL: ${SERVICE_URL_STUDIO}
       CMS_TRUSTED_ORIGINS: ${CMS_TRUSTED_ORIGINS}
       CRON_SECRET: ${SERVICE_PASSWORD_CRON}
 
@@ -65,7 +72,7 @@ services:
       CMS_REQUIRE_EMAIL_VERIFICATION: ${CMS_REQUIRE_EMAIL_VERIFICATION:-}
       LOG_LEVEL: ${LOG_LEVEL:-info}
 
-      NEXT_PUBLIC_CMS_STUDIO_URL: ${SERVICE_FQDN_STUDIO}
+      NEXT_PUBLIC_CMS_STUDIO_URL: ${SERVICE_URL_STUDIO}
       NEXT_PUBLIC_MEDIA_CDN_URL: ${MEDIA_CDN_URL}
     depends_on:
       migrate:
