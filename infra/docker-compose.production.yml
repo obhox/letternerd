@@ -56,6 +56,13 @@ services:
 
       RESEND_API_KEY: ${RESEND_API_KEY}
       EMAIL_FROM: ${EMAIL_FROM}
+      # Unset means "required", because production failing open on this is how
+      # an unverified account claims someone else's invitation. @cms/auth then
+      # refuses to boot unless RESEND_API_KEY is set, which is the intended
+      # pairing. It is passed through rather than hardcoded so that a first
+      # deploy with no mail provider yet can be unblocked from the Coolify UI
+      # instead of by editing this file.
+      CMS_REQUIRE_EMAIL_VERIFICATION: ${CMS_REQUIRE_EMAIL_VERIFICATION:-}
       LOG_LEVEL: ${LOG_LEVEL:-info}
 
       NEXT_PUBLIC_CMS_STUDIO_URL: ${SERVICE_FQDN_STUDIO}
