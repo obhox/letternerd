@@ -1,16 +1,19 @@
 import { defineConfig } from "tsup";
 
 /**
- * Three entries, because they have three different runtime requirements: the
- * core runs anywhere `fetch` exists, `next` needs React and Next, and `legacy`
- * needs neither. A consuming site that imports only the core must not be handed
- * a bundle that references `next/cache`.
+ * Four entries, because they have four different runtime requirements: the
+ * core runs anywhere `fetch` exists, `next` needs React and Next, `legacy`
+ * needs neither, and `cli` is the `letternerd-sdk` bin — it needs Node, for the
+ * filesystem, and must never be reachable from a page's import graph. A
+ * consuming site that imports only the core must not be handed a bundle that
+ * references `next/cache` or `node:fs`.
  */
 export default defineConfig({
   entry: {
     index: "src/index.ts",
     next: "src/next.tsx",
     legacy: "src/legacy.ts",
+    cli: "src/cli/index.ts",
   },
   format: ["esm", "cjs"],
   dts: true,

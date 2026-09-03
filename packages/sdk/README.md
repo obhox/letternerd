@@ -1,4 +1,4 @@
-# `@obhox/cms-sdk`
+# `@letternerd/sdk`
 
 The typed client a Next.js site uses to server-render CMS content **on its own
 domain**. Content is authored in the studio; the pages, the sitemap, the feeds
@@ -8,9 +8,9 @@ Three entry points:
 
 | Import | Needs | What it is |
 | --- | --- | --- |
-| `@obhox/cms-sdk` | `fetch` | The client, the error type, the JSON-LD and artifact builders. |
-| `@obhox/cms-sdk/next` | Next + React | Route handlers, `Metadata` helpers, three components. |
-| `@obhox/cms-sdk/legacy` | `fetch` | A drop-in for a site that already has a `lib/posts.ts`. |
+| `@letternerd/sdk` | `fetch` | The client, the error type, the JSON-LD and artifact builders. |
+| `@letternerd/sdk/next` | Next + React | Route handlers, `Metadata` helpers, three components. |
+| `@letternerd/sdk/legacy` | `fetch` | A drop-in for a site that already has a `lib/posts.ts`. |
 
 The core entry imports no framework, so the same client runs in a server
 component, a worker, a cron script and a test.
@@ -21,7 +21,7 @@ component, a worker, a cron script and a test.
 
 ```ts
 // lib/cms.ts
-import { createCmsClient } from "@obhox/cms-sdk";
+import { createCmsClient } from "@letternerd/sdk";
 
 export const cms = createCmsClient({
   baseUrl: process.env.CMS_API_URL!,   // https://studio.example.com/api/v1
@@ -38,7 +38,7 @@ real 404. A 401 throws — otherwise a revoked key renders an empty blog and a
 crawler indexes it that way.
 
 ```ts
-import { isCmsError } from "@obhox/cms-sdk";
+import { isCmsError } from "@letternerd/sdk";
 
 try {
   await cms.listPosts();
@@ -53,9 +53,9 @@ try {
 ```tsx
 // app/blog/[slug]/page.tsx
 import { notFound } from "next/navigation";
-import { blogPostingLd, breadcrumbLd, faqLd, speakableLd } from "@obhox/cms-sdk";
-import { CmsImage, JsonLd, PostBody, postMetadata } from "@obhox/cms-sdk/next";
-import { toSeoDocument } from "@obhox/cms-sdk";
+import { blogPostingLd, breadcrumbLd, faqLd, speakableLd } from "@letternerd/sdk";
+import { CmsImage, JsonLd, PostBody, postMetadata } from "@letternerd/sdk/next";
+import { toSeoDocument } from "@letternerd/sdk";
 import { cms } from "@/lib/cms";
 
 export async function generateStaticParams() {
@@ -115,28 +115,28 @@ unstyled with dead anchors.
 
 ```ts
 // app/sitemap.xml/route.ts
-import { createBlogSitemapRoute } from "@obhox/cms-sdk/next";
+import { createBlogSitemapRoute } from "@letternerd/sdk/next";
 import { cms } from "@/lib/cms";
 export const GET = createBlogSitemapRoute(cms);
 ```
 
 ```ts
 // app/robots.txt/route.ts
-import { createRobotsRoute } from "@obhox/cms-sdk/next";
+import { createRobotsRoute } from "@letternerd/sdk/next";
 import { cms } from "@/lib/cms";
 export const GET = createRobotsRoute(cms, { aiCrawlers: "allow" });
 ```
 
 ```ts
 // app/rss.xml/route.ts
-import { createFeedRoute } from "@obhox/cms-sdk/next";
+import { createFeedRoute } from "@letternerd/sdk/next";
 import { cms } from "@/lib/cms";
 export const GET = createFeedRoute(cms, "rss");
 ```
 
 ```ts
 // app/llms.txt/route.ts        (and app/llms-full.txt/route.ts)
-import { createLlmsTxtRoute } from "@obhox/cms-sdk/next";
+import { createLlmsTxtRoute } from "@letternerd/sdk/next";
 import { cms } from "@/lib/cms";
 export const GET = createLlmsTxtRoute(cms);
 ```
@@ -149,7 +149,7 @@ it never buffers the whole corpus), `createPostMarkdownRoute` for
 
 ```ts
 // app/api/cms/revalidate/route.ts
-import { createRevalidateWebhookRoute } from "@obhox/cms-sdk/next";
+import { createRevalidateWebhookRoute } from "@letternerd/sdk/next";
 export const POST = createRevalidateWebhookRoute({ secret: process.env.CMS_WEBHOOK_SECRET! });
 ```
 
@@ -162,7 +162,7 @@ empties your cache in a loop.
 
 ```js
 // next.config.mjs
-import { cmsRedirects } from "@obhox/cms-sdk/next";
+import { cmsRedirects } from "@letternerd/sdk/next";
 import { cms } from "./lib/cms.js";
 
 export default { redirects: cmsRedirects(cms) };
@@ -179,8 +179,8 @@ file and change nothing else:
 
 ```ts
 // lib/posts.ts
-import { createCmsClient } from "@obhox/cms-sdk";
-import { createLegacyApi, type LegacyPost } from "@obhox/cms-sdk/legacy";
+import { createCmsClient } from "@letternerd/sdk";
+import { createLegacyApi, type LegacyPost } from "@letternerd/sdk/legacy";
 
 const cms = createCmsClient({
   baseUrl: process.env.CMS_API_URL!,

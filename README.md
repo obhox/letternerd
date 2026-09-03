@@ -26,7 +26,7 @@ packages/auth    better-auth factory, site-scoped authorization
 packages/content markdown pipeline, stable anchors, editorial lints
 packages/seo     JSON-LD, sitemap/robots/feed/llms builders, validators
 packages/media   sharp variants, blurhash, S3-compatible storage
-packages/sdk     @obhox/cms-sdk — the published client
+packages/sdk     @letternerd/sdk — the published client
 packages/ui      shadcn/ui + Tailwind v4 preset
 ```
 

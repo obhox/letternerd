@@ -133,7 +133,7 @@ export interface LegacyApi {
  *
  *     export const { getAllPosts, getPostBySlug, getAllSlugs } =
  *       createLegacyApi(createCmsClient({ ... }));
- *     export type { LegacyPost as Post } from "@obhox/cms-sdk/legacy";
+ *     export type { LegacyPost as Post } from "@letternerd/sdk/legacy";
  *
  * and `app/blog/**` is untouched.
  */

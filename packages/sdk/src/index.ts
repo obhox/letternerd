@@ -1,12 +1,12 @@
 /**
- * `@obhox/cms-sdk` — the typed client a consuming site renders CMS content
+ * `@letternerd/sdk` — the typed client a consuming site renders CMS content
  * with.
  *
  * This entry point is runtime-agnostic on purpose. It needs `fetch` and
  * nothing else: no `next`, no `react`, no Node built-in. That is what lets the
  * same client run inside a Next server component, a Cloudflare Worker, a
  * scheduled export script and a test — and it is why the Next-specific
- * adapters live in `@obhox/cms-sdk/next` rather than here. An `import` of a
+ * adapters live in `@letternerd/sdk/next` rather than here. An `import` of a
  * framework in this file would be invisible until someone deployed to an edge
  * runtime and found out at request time.
  *

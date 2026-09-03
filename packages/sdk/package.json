@@ -1,18 +1,36 @@
 {
-  "name": "@obhox/cms-sdk",
-  "license": "UNLICENSED",
+  "name": "@letternerd/sdk",
+  "license": "MIT",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
-  "description": "Typed client that server-renders CMS content inside a consuming site.",
+  "description": "Typed client for rendering Letternerd CMS content on your own domain.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js", "require": "./dist/index.cjs" },
-    "./next": { "types": "./dist/next.d.ts", "import": "./dist/next.js", "require": "./dist/next.cjs" },
-    "./legacy": { "types": "./dist/legacy.d.ts", "import": "./dist/legacy.js", "require": "./dist/legacy.cjs" }
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./next": {
+      "types": "./dist/next.d.ts",
+      "import": "./dist/next.js",
+      "require": "./dist/next.cjs"
+    },
+    "./legacy": {
+      "types": "./dist/legacy.d.ts",
+      "import": "./dist/legacy.js",
+      "require": "./dist/legacy.cjs"
+    }
   },
-  "files": ["dist", "README.md"],
+  "bin": {
+    "letternerd-sdk": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
@@ -33,7 +51,18 @@
     "react": ">=18"
   },
   "peerDependenciesMeta": {
-    "next": { "optional": true },
-    "react": { "optional": true }
+    "next": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/obhox/letternerd"
   }
 }
