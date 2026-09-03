@@ -19,6 +19,7 @@ import {
 import { createApiKeyAction, revokeApiKeyAction } from "@/app/(studio)/[site]/settings/actions";
 import { CopyOnceSecret } from "./copy-once";
 import type { ApiKeyView } from "./types";
+import { FormattedDate } from "@/components/format";
 
 /**
  * API keys.
@@ -48,14 +49,6 @@ const KEY_TYPES = [
   },
 ] as const;
 
-function formatDate(iso: string | null): string {
-  if (iso === null) return "—";
-  return new Date(iso).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
 
 export function ApiKeysPanel({
   siteSlug,
@@ -101,10 +94,10 @@ export function ApiKeysPanel({
           // facts; only the first is true here, and it is worth saying.
           <span className="text-[var(--color-ink-muted)]">Never used</span>
         ) : (
-          formatDate(row.lastUsedAt)
+          <FormattedDate iso={row.lastUsedAt} />
         ),
     },
-    { key: "created", header: "Created", render: (row) => formatDate(row.createdAt) },
+    { key: "created", header: "Created", render: (row) => <FormattedDate iso={row.createdAt} /> },
     {
       key: "actions",
       header: "",

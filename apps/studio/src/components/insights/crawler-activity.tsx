@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BotIcon } from "lucide-react";
 import { Badge, EmptyState } from "@cms/ui";
 import type { CrawlerActivityView, InsightDocument } from "./types";
+import { FormattedNumber } from "@/components/format";
 
 /**
  * What answer engines actually did with this site's pages.
@@ -72,7 +73,7 @@ export function CrawlerActivity({
                 <div className="flex items-baseline justify-between">
                   <span className="text-sm font-medium text-[var(--color-ink)]">{bot.botName}</span>
                   <span className="font-mono text-xs text-[var(--color-ink-muted)]">
-                    {bot.hits.toLocaleString()} hits
+                    <FormattedNumber value={bot.hits} /> hits
                   </span>
                 </div>
                 <div className="ui-scroll mt-1 flex h-12 items-end gap-0.5 overflow-x-auto">
@@ -141,7 +142,7 @@ export function CrawlerActivity({
         <p className="mt-2 text-xs text-[var(--color-ink-muted)]">
           Raw crawler hits are kept for {timing.rawHitRetentionDays} days
           {timing.logRetainedSince
-            ? `, and this site's log reaches back to ${new Date(timing.logRetainedSince).toLocaleDateString()}`
+            ? `, and this site's log reaches back to ${new Date(timing.logRetainedSince).toISOString().slice(0, 10)}`
             : ", and this site has no crawler hits recorded at all"}
           . Documents published before that count as unknown, not as never crawled.
         </p>

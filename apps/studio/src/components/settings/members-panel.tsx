@@ -24,6 +24,7 @@ import {
 } from "@/app/(studio)/[site]/settings/actions";
 import { CopyOnceSecret } from "./copy-once";
 import type { InvitationView, MemberView } from "./types";
+import { FormattedDate } from "@/components/format";
 
 /**
  * People and their access.
@@ -278,7 +279,7 @@ export function MembersPanel({
                 <span className="min-w-0 flex-1 truncate">{invitation.email}</span>
                 <Badge variant="outline">{ROLE_LABELS[invitation.role as SiteRole] ?? invitation.role}</Badge>
                 <span className="text-xs text-[var(--color-ink-muted)]">
-                  expires {new Date(invitation.expiresAt).toLocaleDateString()}
+                  expires <FormattedDate iso={invitation.expiresAt} />
                 </span>
               </li>
             ))}

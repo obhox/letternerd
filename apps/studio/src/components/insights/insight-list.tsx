@@ -43,7 +43,9 @@ function formatMetric(key: string, value: number | string): string {
   if (key === "position" || key === "previousPosition" || key === "currentPosition") {
     return value.toFixed(1);
   }
-  return value.toLocaleString();
+  // Grouped deterministically rather than by host locale: this is
+  // server-rendered, and 1,234 against 1.234 is a hydration mismatch.
+  return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
 function editorHref(siteSlug: string, document: InsightDocument | undefined): string | null {

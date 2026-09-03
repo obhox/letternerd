@@ -44,7 +44,7 @@ function formatDate(value: string | Date): string {
   const date = value instanceof Date ? value : new Date(value);
   return Number.isNaN(date.getTime())
     ? "—"
-    : date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    : date.toISOString().slice(0, 10);
 }
 
 export function RedirectsScreen({

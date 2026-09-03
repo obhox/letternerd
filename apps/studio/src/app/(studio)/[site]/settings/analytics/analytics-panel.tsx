@@ -5,6 +5,7 @@ import { ChartNoAxesColumnIcon } from "lucide-react";
 import { Badge, Button, EmptyState } from "@cms/ui";
 import { disconnectConnectionAction, testConnectionAction } from "./actions";
 import type { CallbackNotice, ConnectionView } from "./types";
+import { FormattedDate } from "@/components/format";
 
 /**
  * Connection status, the three actions, and an honest account of what is
@@ -50,10 +51,6 @@ const UNLOCKED_RULES = [
   },
 ];
 
-function formatWhen(iso: string | null): string {
-  if (!iso) return "never";
-  return new Date(iso).toLocaleString();
-}
 
 /**
  * Turns remaining seconds into something worth reading.
@@ -283,12 +280,12 @@ export function AnalyticsPanel({
               <div>
                 <dt className="text-[var(--color-ink-muted)]">Last successful sync</dt>
                 <dd className="text-[var(--color-ink)]">
-                  {formatWhen(searchConsole.lastSyncedAt)}
+                  {<FormattedDate iso={searchConsole.lastSyncedAt} withTime />}
                 </dd>
               </div>
               <div>
                 <dt className="text-[var(--color-ink-muted)]">Connected</dt>
-                <dd className="text-[var(--color-ink)]">{formatWhen(searchConsole.createdAt)}</dd>
+                <dd className="text-[var(--color-ink)]">{<FormattedDate iso={searchConsole.createdAt} withTime />}</dd>
               </div>
               <div className="sm:col-span-2">
                 <dt className="text-[var(--color-ink-muted)]">Credential</dt>
