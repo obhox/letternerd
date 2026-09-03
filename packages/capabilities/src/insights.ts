@@ -250,7 +250,7 @@ function createGetCrawlerHits(): AnyCapability {
         .select({
           documentId: schema.crawlerHits.documentId,
           hits: sql<number>`count(*)::int`,
-          lastHitAt: sql<Date>`max(${schema.crawlerHits.occurredAt})`,
+          lastHitAt: sql<Date>`max(${schema.crawlerHits.occurredAt})`.mapWith(schema.crawlerHits.occurredAt),
           bots: sql<string[]>`array_agg(distinct ${schema.crawlerHits.botName})`,
         })
         .from(schema.crawlerHits)
@@ -293,7 +293,7 @@ function createGetCrawlerHits(): AnyCapability {
       const firstAiCrawls = (await services.db
         .select({
           documentId: schema.crawlerHits.documentId,
-          firstAt: sql<Date>`min(${schema.crawlerHits.occurredAt})`,
+          firstAt: sql<Date>`min(${schema.crawlerHits.occurredAt})`.mapWith(schema.crawlerHits.occurredAt),
         })
         .from(schema.crawlerHits)
         .where(
@@ -309,7 +309,7 @@ function createGetCrawlerHits(): AnyCapability {
       }[];
 
       const [oldest] = (await services.db
-        .select({ earliest: sql<Date | null>`min(${schema.crawlerHits.occurredAt})` })
+        .select({ earliest: sql<Date | null>`min(${schema.crawlerHits.occurredAt})`.mapWith(schema.crawlerHits.occurredAt) })
         .from(schema.crawlerHits)
         .where(eq(schema.crawlerHits.siteId, actor.siteId))) as { earliest: Date | null }[];
 
@@ -581,8 +581,8 @@ function createListInsights(deps: InsightsDeps): AnyCapability {
       const aiCrawls = (await services.db
         .select({
           documentId: schema.crawlerHits.documentId,
-          lastAt: sql<Date>`max(${schema.crawlerHits.occurredAt})`,
-          firstAt: sql<Date>`min(${schema.crawlerHits.occurredAt})`,
+          lastAt: sql<Date>`max(${schema.crawlerHits.occurredAt})`.mapWith(schema.crawlerHits.occurredAt),
+          firstAt: sql<Date>`min(${schema.crawlerHits.occurredAt})`.mapWith(schema.crawlerHits.occurredAt),
         })
         .from(schema.crawlerHits)
         .where(
@@ -599,7 +599,7 @@ function createListInsights(deps: InsightsDeps): AnyCapability {
       }[];
 
       const [oldestHit] = (await services.db
-        .select({ earliest: sql<Date | null>`min(${schema.crawlerHits.occurredAt})` })
+        .select({ earliest: sql<Date | null>`min(${schema.crawlerHits.occurredAt})`.mapWith(schema.crawlerHits.occurredAt) })
         .from(schema.crawlerHits)
         .where(eq(schema.crawlerHits.siteId, actor.siteId))) as { earliest: Date | null }[];
 
