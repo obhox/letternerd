@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { FileTextIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import {
-  Badge,
   DataTable,
   EmptyState,
   LintBadge,
@@ -27,15 +26,17 @@ import { editorHref, type DocumentSummary } from "./types";
 function LintCell({ report }: { report: unknown }) {
   const summary = summarizeLintReport(report);
 
-  if (!summary.checked) {
-    return (
-      <Badge variant="outline" title="Lints run on preview and on publish.">
-        Not checked
-      </Badge>
-    );
-  }
-
-  return <LintBadge errors={summary.errors} warnings={summary.warnings} />;
+  // Delegated rather than drawn here. LintBadge already distinguishes "checked
+  // and clean" from "never checked" — two facts a green badge on an unchecked
+  // document would conflate — and a second spelling of that rule is a second
+  // place for it to drift. The two had already diverged in their title text.
+  return (
+    <LintBadge
+      errors={summary.errors}
+      warnings={summary.warnings}
+      checked={summary.checked}
+    />
+  );
 }
 
 export interface DocumentTableProps {
