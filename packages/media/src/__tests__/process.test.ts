@@ -1,5 +1,5 @@
 import { decode as decodeBlurhash } from "blurhash";
-import sharp from "sharp";
+import sharp, { type Sharp as SharpInstance } from "sharp";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -43,7 +43,7 @@ function solidImage(
   width: number,
   height: number,
   options: { alpha?: boolean } = {},
-): sharp.Sharp {
+): SharpInstance {
   return sharp({
     create: {
       width,

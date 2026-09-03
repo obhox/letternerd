@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 
 import { invalidInput } from "@cms/core";
 import { encode as encodeBlurhash } from "blurhash";
-import sharp from "sharp";
+import sharp, { type Metadata as SharpMetadata } from "sharp";
 
 import { IMMUTABLE_CACHE_CONTROL, originalKey, variantKey } from "./keys";
 import type { StorageService } from "./storage";
@@ -221,7 +221,7 @@ export async function processUpload(input: ProcessUploadInput): Promise<Processe
   };
 }
 
-async function readMetadata(buffer: Buffer): Promise<sharp.Metadata> {
+async function readMetadata(buffer: Buffer): Promise<SharpMetadata> {
   try {
     return await sharp(buffer, { failOn: "error" }).metadata();
   } catch {
