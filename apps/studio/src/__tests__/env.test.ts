@@ -63,6 +63,24 @@ describe("secret strength", () => {
     const { env } = await load({ CRON_SECRET: STRONG }, "production");
     expect(env.CRON_SECRET).toHaveLength(64);
   });
+
+  it("does not reject the Dockerfile's build-stage placeholder during `next build`", async () => {
+    // `next build` forces NODE_ENV=production for its own compilation and sets
+    // NEXT_PHASE=phase-production-build while it collects page data — see
+    // `infra/docker/Dockerfile.studio`, which sets this exact value so that
+    // pass has *something* syntactically valid to import. Without the
+    // NEXT_PHASE carve-out in `IS_PRODUCTION`, this is indistinguishable from
+    // a real deploy running with the placeholder still in place, and the
+    // build fails over a value nobody configured for runtime at all.
+    const { env } = await load(
+      {
+        BETTER_AUTH_SECRET: "build-time-placeholder-not-a-real-secret-0000000000",
+        NEXT_PHASE: "phase-production-build",
+      },
+      "production",
+    );
+    expect(env.BETTER_AUTH_SECRET).toBe("build-time-placeholder-not-a-real-secret-0000000000");
+  });
 });
 
 describe("cronSecret()", () => {

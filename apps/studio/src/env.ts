@@ -22,7 +22,22 @@ import { SITE_ROLES, type SiteRole } from "@cms/core/roles";
  * `NEXT_PUBLIC_` variable instead, precisely to avoid that.
  */
 
-export const IS_PRODUCTION = process.env.NODE_ENV === "production";
+/**
+ * True only when this process is actually serving requests in production —
+ * not while `next build` is collecting page data.
+ *
+ * `next build` forces `NODE_ENV=production` for its own compilation (Next's
+ * behavior, not something this repo configures), and every route module —
+ * this one included — is imported during that pass to trace what each route
+ * needs. Without the second condition, that import would run the same
+ * placeholder-secret check a running server needs, against the Dockerfile's
+ * own build-stage placeholder (`infra/docker/Dockerfile.studio`), and fail
+ * the build over a value nobody configured. `NEXT_PHASE` is Next's own signal
+ * for the distinction: it is set to `phase-production-build` only for that
+ * pass, never for `next start` at runtime.
+ */
+export const IS_PRODUCTION =
+  process.env.NODE_ENV === "production" && process.env.NEXT_PHASE !== "phase-production-build";
 
 /**
  * Anything that is not plainly false is true.
