@@ -1,4 +1,4 @@
-# cms
+# Letternerd
 
 An MCP-first, multi-site CMS for blog and website content, built for SEO, AEO and GEO.
 
@@ -54,3 +54,13 @@ pnpm -r test
 
 Coolify, one project with a Coolify-managed Postgres resource. Images build in
 GitHub Actions and are pulled by tag — see `infra/DEPLOY.md`.
+
+## Licence
+
+MIT — see [LICENSE](LICENSE). The published client, `@letternerd/sdk`, carries
+the same licence.
+
+Self-hosting is the intended way to run this. The studio is one container plus a
+Postgres database, and every artifact a search or answer engine reads is served
+from your own domain rather than from the CMS, so nothing about the deployment
+ties your content's URLs to this project.

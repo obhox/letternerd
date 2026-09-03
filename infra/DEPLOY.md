@@ -16,19 +16,25 @@ Both `latest` and the commit SHA are pushed. Never build on the server — a
 build competing with the running app for RAM on a single-server host is how a
 deploy takes the site down.
 
-### The packages are public
+### Make the packages public
 
-Both packages are public on ghcr.io, so the server pulls them anonymously and
-needs no registry credentials at all. This is the deliberate choice for an
-open-source platform: nothing in a published image is a secret that the source
-does not already give away, and every secret the studio actually needs is
-injected at runtime from Coolify's env store, never baked into a layer.
+A package inherits its repository's visibility, and this one was built while the
+repository was private, so both packages are private today — an anonymous
+manifest request returns 403. Coolify surfaces that as a compose deploy failing
+on `pull_policy: always` before any container starts, which reads as a broken
+deploy rather than a permissions setting.
 
-If a fork keeps its repository private, note that its packages inherit that
-visibility and ghcr.io then refuses anonymous pulls — a bare `docker pull` gets
-a 403, which Coolify surfaces as a compose deploy failing on
-`pull_policy: always` before any container starts. The fix there is one
-`docker login` per server, with a token scoped to `read:packages` and nothing
+Flip both to public once, in their GitHub package settings. Nothing in the
+compose file or the workflow refers to visibility, so there is no code change
+and no re-push; the tags already pushed simply become pullable.
+
+Public is the right setting for an open-source platform: nothing in a published
+image is a secret the source does not already give away, and every secret the
+studio actually needs is injected at runtime from Coolify's env store, never
+baked into a layer.
+
+A fork that stays private keeps hitting the 403 above, and its fix is one
+`docker login` per server with a token scoped to `read:packages` and nothing
 else:
 
 ```bash
