@@ -519,6 +519,150 @@ export const listRevisions = defineCapability({
   },
 });
 
+/**
+ * The parts of a revision's `snapshot` blob that a restore puts back.
+ *
+ * `snapshot` is jsonb, so drizzle types it as `unknown` — narrowed here rather
+ * than cast at the call site, because a revision written by an older release
+ * may legitimately not carry every key.
+ */
+function snapshotSeoOverrides(snapshot: unknown): Record<string, unknown> | undefined {
+  if (typeof snapshot !== "object" || snapshot === null) return undefined;
+  const value = (snapshot as Record<string, unknown>).seoOverrides;
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return undefined;
+  return value as Record<string, unknown>;
+}
+
+export const restoreRevision = defineCapability({
+  name: "restore_revision",
+  title: "Restore a revision",
+  description:
+    "Put a document's title, description, markdown and SEO overrides back to a saved revision. " +
+    "The current state is captured as a new revision first, so a restore is itself undoable and " +
+    "restoring the wrong number costs nothing. This is an editing action, not a publishing one: " +
+    "status, publishedAt, the slug and the rendered HTML are left exactly as they are, so the " +
+    "live page does not change until someone publishes.",
+  input: z.object({
+    documentId: z.string().uuid(),
+    revisionNumber: z.number().int().min(1),
+  }),
+  scopes: ["content:write"],
+  role: "author",
+  route: { method: "POST", path: "/documents/:documentId/revisions/restore" },
+  handler: async (input, { actor, services }) => {
+    return services.db.transaction(async (tx) => {
+      /**
+       * The document first, scoped to the actor's site.
+       *
+       * Order matters. Looking the document up before the revision is what
+       * makes a revision number belonging to another tenant answer `not_found`
+       * rather than `forbidden` — a 403 would confirm that the pair exists,
+       * which is the enumeration oracle `notFound` exists to close.
+       */
+      const [doc] = await tx
+        .select()
+        .from(schema.documents)
+        .where(and(visibilityWhere(actor), eq(schema.documents.id, input.documentId)))
+        .limit(1);
+
+      if (!doc) throw notFound("Document not found.");
+      assertCanWriteDocument(actor, doc);
+
+      const [revision] = await tx
+        .select()
+        .from(schema.documentRevisions)
+        .where(
+          and(
+            eq(schema.documentRevisions.documentId, doc.id),
+            eq(schema.documentRevisions.revisionNumber, input.revisionNumber),
+          ),
+        )
+        .limit(1);
+
+      if (!revision) throw notFound("Revision not found.");
+
+      /**
+       * Snapshot what is about to be overwritten, before overwriting it.
+       *
+       * A restore that discards the text it replaces is a second way to lose
+       * work, and someone will restore the wrong number — the list is a column
+       * of near-identical timestamps. Writing this row first makes that a
+       * two-click mistake instead of a permanent one, and it is written in the
+       * same transaction as the overwrite so there is no window where the old
+       * text is gone and the safety copy is not yet there.
+       */
+      const [{ next } = { next: 1 }] = await tx
+        .select({
+          next: sql<number>`coalesce(max(${schema.documentRevisions.revisionNumber}), 0) + 1`,
+        })
+        .from(schema.documentRevisions)
+        .where(eq(schema.documentRevisions.documentId, doc.id));
+
+      await tx.insert(schema.documentRevisions).values({
+        documentId: doc.id,
+        revisionNumber: next,
+        title: doc.title,
+        description: doc.description,
+        bodyMd: doc.bodyMd,
+        snapshot: { slug: doc.slug, status: doc.status, seoOverrides: doc.seoOverrides },
+        note: `Automatic: state before restoring revision ${input.revisionNumber}.`,
+        createdByUserId: actor.kind === "user" ? actor.id : null,
+      });
+
+      const restoredSeo = snapshotSeoOverrides(revision.snapshot);
+
+      const [updated] = await tx
+        .update(schema.documents)
+        .set({
+          // `revision.title` is nullable in the table but the column on
+          // documents is not, so an ancient revision without one keeps the
+          // current title rather than blanking it.
+          title: revision.title ?? doc.title,
+          description: revision.description,
+          bodyMd: revision.bodyMd,
+          ...(restoredSeo !== undefined && { seoOverrides: restoredSeo }),
+
+          /**
+           * Deliberately absent from this `set`, and the decision most likely
+           * to be "fixed" wrongly later: `status`, `publishedAt`,
+           * `firstPublishedAt`, `dateModified`, `bodyHtml` and every other
+           * rendered column, and `slug`.
+           *
+           * Restoring is an editing action. It moves the source of truth back;
+           * it does not decide what readers see. Writing `bodyHtml` here would
+           * silently change a live page from a screen that offers no preview
+           * and no lint gate — an author scrolling revision history would
+           * republish the site by clicking a row. Writing `status` back would
+           * be worse: a revision taken while the post was a draft would
+           * unpublish it, and one taken while it was published would push
+           * unreviewed markdown live past the publish gate entirely.
+           *
+           * `slug` is excluded for the same reason plus one more: on a
+           * published document a slug change owes a 301 in `slug_history`, and
+           * that redirect belongs to `update_document`, which knows to write
+           * it. Restoring an old slug here would move a live URL and leave
+           * nothing pointing at it.
+           *
+           * The document is left showing `hasUnpublishedChanges`, which is
+           * exactly what has just happened, and the next publish renders the
+           * restored markdown through the same gate as any other edit.
+           */
+          updatedAt: services.now(),
+          updatedBy: actor.kind === "user" ? actor.id : null,
+        })
+        .where(eq(schema.documents.id, doc.id))
+        .returning();
+
+      return {
+        document: updated!,
+        restoredFrom: input.revisionNumber,
+        /** The safety copy, so the UI can say what to click to undo this. */
+        undoRevisionNumber: next,
+      };
+    });
+  },
+});
+
 export const renderPreview = defineCapability({
   name: "render_preview",
   title: "Render preview",
@@ -582,5 +726,6 @@ export const documentCapabilities = [
   unpublishDocument,
   deleteDocument,
   listRevisions,
+  restoreRevision,
   renderPreview,
 ];

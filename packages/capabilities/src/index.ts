@@ -17,6 +17,7 @@ import { documentCapabilities } from "./documents";
 import { editorialCapabilities } from "./editorial";
 import { insightsCapabilities } from "./insights";
 import { mediaCapabilities } from "./media";
+import { schedulerCapabilities } from "./scheduler";
 import { settingsCapabilities } from "./settings";
 import { siteCapabilities } from "./sites";
 
@@ -27,6 +28,7 @@ export const capabilities = [
   ...editorialCapabilities,
   ...settingsCapabilities,
   ...insightsCapabilities,
+  ...schedulerCapabilities,
 ];
 
 export const registry = createRegistry(capabilities);
@@ -35,6 +37,7 @@ export * from "./documents";
 export * from "./editorial";
 export * from "./insights";
 export * from "./media";
+export * from "./scheduler";
 export * from "./settings";
 export * from "./sites";
 export * from "./render";
