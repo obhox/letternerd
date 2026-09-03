@@ -1,5 +1,6 @@
 import { resolve } from "node:path";
-import { applyPlan, formatOutcomes, formatRemainingWork } from "./apply";
+import { UnsafePlanError, applyPlan, formatOutcomes, formatRemainingWork } from "./apply";
+import type { ApplyResult } from "./apply";
 import { HELP, parseArgs } from "./args";
 import type { EnvLike } from "./args";
 import { detectProject } from "./detect";
@@ -123,7 +124,32 @@ export async function run(argv: string[], io: Io = defaultIo): Promise<number> {
   );
   io.log("");
 
-  const result = applyPlan(plan, { root, srcDir: facts.srcDir, dryRun: options.dryRun });
+  let result: ApplyResult;
+  try {
+    result = applyPlan(plan, { root, srcDir: facts.srcDir, dryRun: options.dryRun });
+  } catch (error) {
+    if (!(error instanceof UnsafePlanError)) throw error;
+    /**
+     * Also fatal, and for a stronger reason than a studio that would not
+     * answer: one that answered with a path outside the project is not the
+     * studio. The summary is printed with the rejected paths marked so the
+     * reader can see exactly what was asked for, and then nothing else happens.
+     */
+    io.error("This plan names paths outside the project, so nothing was written.");
+    io.error("");
+    for (const line of formatOutcomes({
+      outcomes: error.outcomes,
+      created: 0,
+      skipped: error.outcomes.filter((outcome) => outcome.action === "skip").length,
+      dryRun: options.dryRun,
+    })) {
+      io.error(line);
+    }
+    io.error("");
+    io.error(`  ${error.message}`);
+    io.error("  Check that --studio-url really is your studio before running this again.");
+    return 1;
+  }
 
   io.log(options.dryRun ? "Would write:" : "Files:");
   for (const line of formatOutcomes(result)) io.log(line);

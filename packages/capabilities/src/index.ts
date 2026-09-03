@@ -37,6 +37,7 @@ export const capabilities = [
 
 export const registry = createRegistry(capabilities);
 
+export * from "./audit";
 export * from "./connections";
 export * from "./documents";
 export * from "./editorial";
@@ -48,4 +49,4 @@ export * from "./settings";
 export * from "./sites";
 export * from "./render";
 export * from "./shared";
-export type { Database, StorageService } from "./services";
+export type { Database, StorageService, ServiceLimits } from "./services";

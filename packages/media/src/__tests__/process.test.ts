@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   IMMUTABLE_CACHE_CONTROL,
+  MAX_INPUT_PIXELS,
   type ProcessedUpload,
   type StorageService,
   VARIANT_WIDTHS,
@@ -194,6 +195,35 @@ describe("processUpload", () => {
 
     await expect(run(source, { maxBytes: 10 })).rejects.toThrow(/exceeds the 10 byte limit/);
     await expect(run(source, { maxBytes: source.byteLength })).resolves.toBeDefined();
+  }, 30_000);
+
+  it("rejects a decompression bomb on its pixel count before decoding it", async () => {
+    // 7100 x 7100 is 50.41 megapixels — just over the ceiling — and as a solid
+    // colour it is under 300 KB, so it sails through the byte limit. That gap
+    // is the point: byte size says nothing about what a decoder allocates.
+    const bomb = await jpeg(7100, 7100);
+    expect(7100 * 7100).toBeGreaterThan(MAX_INPUT_PIXELS);
+    expect(bomb.byteLength).toBeLessThan(1024 * 1024);
+
+    const storage = fakeStorage();
+    await expect(run(bomb, { storage })).rejects.toThrow(/exceeds the 50000000 pixel limit/);
+    expect(storage.objects.size).toBe(0);
+  }, 30_000);
+
+  it("lets a caller lower the pixel ceiling but never raise it", async () => {
+    const source = await jpeg(400, 300);
+
+    await expect(run(source, { maxPixels: 1000 })).rejects.toThrow(
+      /400x300 \(120000 pixels\), which exceeds the 1000 pixel limit/,
+    );
+    await expect(run(source, { maxPixels: 400 * 300 })).resolves.toBeDefined();
+
+    // The constant is the ceiling, whatever the caller asks for.
+    expect(MAX_INPUT_PIXELS).toBe(50_000_000);
+    const bomb = await jpeg(7100, 7100);
+    await expect(run(bomb, { maxPixels: Number.MAX_SAFE_INTEGER })).rejects.toThrow(
+      /exceeds the 50000000 pixel limit/,
+    );
   }, 30_000);
 
   it("returns a blurhash that decodes and a dominant colour", async () => {

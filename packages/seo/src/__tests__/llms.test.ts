@@ -31,6 +31,15 @@ describe("buildLlmsTxt", () => {
     expect(txt.match(/^### /gm)).toHaveLength(1);
   });
 
+  it("escapes a title that would otherwise end the link early", () => {
+    const txt = buildLlmsTxt([{ ...doc, title: "Read [this] (now) \\ carefully" }], site);
+    expect(txt).toContain(
+      "- [Read \\[this\\] \\(now\\) \\\\ carefully](https://spendtab.com/blog/expense-policies): A short guide",
+    );
+    // The line is still exactly one link.
+    expect(txt.match(/\]\(https:\/\/spendtab\.com/g)).toHaveLength(1);
+  });
+
   it("uses the consuming origin for every link", () => {
     const txt = buildLlmsTxt([doc], site);
     expect(txt).not.toContain("cms.");
@@ -59,6 +68,17 @@ describe("buildLlmsFullTxt", () => {
     const txt = buildLlmsFullTxt([doc, draftish], site);
     expect(txt.match(/^---$/gm)).toHaveLength(4);
     expect(txt.indexOf("expense-policies")).toBeLessThan(txt.indexOf("receipts"));
+  });
+
+  it("escapes a body line that would read as the next document's fence", () => {
+    const body = "Intro.\n\n---\n\n  ---  \n\n----\n\n- - -\n\nOutro.";
+    const txt = buildLlmsFullTxt([{ ...doc, bodyText: body }, draftish], site);
+
+    // Still two fences per document: the body contributed none.
+    expect(txt.match(/^---$/gm)).toHaveLength(4);
+    // Exactly `---` is escaped; the other thematic breaks are not fences and
+    // are left alone.
+    expect(txt).toContain("Intro.\n\n\\---\n\n\\---\n\n----\n\n- - -\n\nOutro.");
   });
 
   it("quotes a title that would otherwise break the frontmatter", () => {

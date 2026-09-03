@@ -65,6 +65,23 @@ export const EMBED_PROVIDERS: EmbedProvider[] = [
 ];
 
 /**
+ * Whether a URL is one a reader can be sent to.
+ *
+ * Only `http:` and `https:` qualify. The sanitiser would strip a `javascript:`
+ * href anyway, but the fallback link for an unrecognised embed is built here,
+ * and a pass that never constructs a dangerous link does not depend on a later
+ * pass remembering to remove it.
+ */
+export function isWebUrl(rawUrl: string): boolean {
+  try {
+    const { protocol } = new URL(rawUrl);
+    return protocol === "https:" || protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Returns `undefined` for anything unrecognised rather than guessing.
  *
  * A facade built from a URL we do not understand would render a broken poster
@@ -76,13 +93,8 @@ export function resolveEmbed(
   rawUrl: string,
   providers: readonly EmbedProvider[] = EMBED_PROVIDERS,
 ): EmbedInfo | undefined {
-  let url: URL;
-  try {
-    url = new URL(rawUrl);
-  } catch {
-    return undefined;
-  }
-  if (url.protocol !== "https:" && url.protocol !== "http:") return undefined;
+  if (!isWebUrl(rawUrl)) return undefined;
+  const url = new URL(rawUrl);
 
   for (const provider of providers) {
     if (provider.match.test(url.hostname)) return provider.build(url);

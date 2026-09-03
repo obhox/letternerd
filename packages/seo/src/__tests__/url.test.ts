@@ -41,7 +41,23 @@ describe("absoluteUrl", () => {
 
   it("leaves an already-absolute URL alone", () => {
     expect(absoluteUrl(site, "https://cdn.example.com/a.png")).toBe("https://cdn.example.com/a.png");
+    expect(absoluteUrl(site, "http://cdn.example.com/a.png")).toBe("http://cdn.example.com/a.png");
+    expect(absoluteUrl(site, "HTTPS://cdn.example.com/a.png")).toBe("HTTPS://cdn.example.com/a.png");
     expect(absoluteUrl(site, "//cdn.example.com/a.png")).toBe("https://spendtab.com/cdn.example.com/a.png");
+  });
+
+  it("treats any scheme that is not the web's as a path, never as an absolute URL", () => {
+    // A settings field is where these would arrive, and every caller writes
+    // the result into an href, a <loc> or a JSON-LD url.
+    expect(absoluteUrl(site, "javascript:alert(1)")).toBe("https://spendtab.com/javascript:alert(1)");
+    expect(absoluteUrl(site, "data:text/html,<script>")).toBe(
+      "https://spendtab.com/data:text/html,<script>",
+    );
+    expect(absoluteUrl(site, "mailto:hello@example.com")).toBe(
+      "https://spendtab.com/mailto:hello@example.com",
+    );
+    // A scheme prefix without `//` is not a web URL either.
+    expect(absoluteUrl(site, "https:evil.example/a")).toBe("https://spendtab.com/https:evil.example/a");
   });
 });
 
@@ -68,6 +84,19 @@ describe("canonicalUrlFor", () => {
   it("ignores an empty override", () => {
     expect(canonicalUrlFor(site, { ...doc, canonicalUrlOverride: "  " })).toBe(
       "https://spendtab.com/blog/expense-policies",
+    );
+  });
+});
+
+describe("canonicalUrlFor with a hostile override", () => {
+  it("never emits a non-web scheme verbatim", async () => {
+    const { canonicalUrlFor } = await import("../url");
+    const site = { baseUrl: "https://blog.example", blogBasePath: "/blog" } as never;
+    const url = canonicalUrlFor(site, { slug: "hello", canonicalUrlOverride: "javascript:alert(1)" });
+    expect(url).toBe(canonicalUrlFor(site, { slug: "hello", canonicalUrlOverride: null }));
+    expect(url).not.toContain("javascript:");
+    expect(canonicalUrlFor(site, { slug: "hello", canonicalUrlOverride: "https://other.example/p/" })).toBe(
+      "https://other.example/p/",
     );
   });
 });

@@ -209,3 +209,11 @@ the detail page instead.
 - **`@cms/seo` is inlined**, not a dependency: the SDK fetches and adapts, and
   no SEO logic is reimplemented here.
 - `logCrawlerHit` is fire-and-forget and never throws into a render.
+
+## Security
+
+- **The API key only travels over HTTPS.** `createCmsClient` and `npx @letternerd/sdk init`
+  both refuse a plain `http://` base or studio URL, except for `localhost`. (0.1.1)
+- **`init` only writes inside the project.** A studio's install plan is validated before
+  anything touches disk: no absolute paths, no `..`, nothing under `.git`, `node_modules`
+  or `.env*`; one bad entry and nothing at all is written. (0.1.1)

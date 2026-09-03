@@ -1,5 +1,7 @@
 import { z } from "zod";
+import { MAX_BASE64_CHARS } from "@cms/capabilities";
 import { currentUser, dispatch, studioContext } from "@/server/context";
+import { RULES, rateLimit, rateLimitedResponse } from "@/server/rate-limit";
 
 /**
  * One file per request, base64 in a JSON body.
@@ -23,16 +25,33 @@ export const maxDuration = 120;
 const bodySchema = z.object({
   site: z.string().min(1),
   filename: z.string().min(1).max(300),
-  contentBase64: z.string().min(1),
+  /**
+   * Bounded here as well as in the capability, and with the same constant so
+   * the two cannot drift: `request.json()` has already buffered the body, but
+   * this is the last point before the string is copied further into the
+   * process, and a 36 MB string that is going to be refused should be refused
+   * before it is copied once more.
+   */
+  contentBase64: z.string().min(1).max(MAX_BASE64_CHARS),
   alt: z.string().max(500).optional(),
 });
 
 export async function POST(request: Request) {
   // Checked before `studioContext`, which answers a signed-out visitor with a
   // redirect — correct for a page, useless to `fetch`.
-  if (!(await currentUser())) {
+  const user = await currentUser();
+  if (!user) {
     return Response.json({ ok: false, message: "Your session has expired." }, { status: 401 });
   }
+
+  /**
+   * Per user, before the body is parsed. Every upload here can be 25 MB of
+   * image that sharp then decodes on a host the deploy document describes as
+   * single-server; twenty a minute is plenty for a person dragging a folder of
+   * photographs in and not enough to take the studio down.
+   */
+  const budget = rateLimit(RULES.upload, user.id);
+  if (!budget.allowed) return rateLimitedResponse(budget, RULES.upload, { ok: false });
 
   let raw: unknown;
   try {

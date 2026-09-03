@@ -20,6 +20,8 @@ const MESSAGES: Record<string, string> = {
   INVALID_EMAIL: "That does not look like an email address.",
   PASSWORD_TOO_SHORT: `Choose a password of at least ${MIN_PASSWORD_LENGTH} characters.`,
   PASSWORD_TOO_LONG: "That password is too long. Keep it under 256 characters.",
+  SIGNUP_BY_INVITATION_ONLY:
+    "This studio creates accounts by invitation only. Use the exact address your invitation was sent to.",
 };
 
 function messageFor(code: string | undefined, status: number | undefined): string {
@@ -30,7 +32,7 @@ function messageFor(code: string | undefined, status: number | undefined): strin
   return "The account could not be created. Please try again.";
 }
 
-export function SignUpForm({ redirectTo }: { redirectTo: string }) {
+export function SignUpForm({ redirectTo, invitationOnly = false }: { redirectTo: string; invitationOnly?: boolean }) {
   const router = useRouter();
   const nameId = useId();
   const emailId = useId();
@@ -125,7 +127,11 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
   return (
     <form onSubmit={onSubmit} className={s.card} noValidate>
       <h1 className={s.heading}>Create an account</h1>
-      <p className={s.subheading}>You will need an invitation to reach a site.</p>
+      <p className={s.subheading}>
+        {invitationOnly
+          ? "Use the address your invitation was sent to; no other address can register here."
+          : "You will need an invitation to reach a site."}
+      </p>
 
       <div className="mt-6">
         <label htmlFor={nameId} className={s.label}>

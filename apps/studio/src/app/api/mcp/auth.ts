@@ -1,7 +1,9 @@
 import { actorFromApiKey } from "@cms/auth";
 import type { Actor } from "@cms/core";
 import { originAllowed, verifyApiKey } from "@cms/db/api-keys";
+import { env } from "@/env";
 import { db } from "@/server/services";
+import { RULES, clientIp, isRateLimited, rateLimit, rateLimitedResponse } from "@/server/rate-limit";
 
 /**
  * The MCP endpoint's front door.
@@ -66,8 +68,21 @@ export async function authenticate(request: Request): Promise<AuthOutcome> {
     };
   }
 
+  /**
+   * Failed lookups are budgeted per source address, as on `/api/v1`: a key
+   * cannot be guessed, but each attempt is a database round trip, and an
+   * unmetered stream of them is a denial of service that needs no vulnerability.
+   */
+  const ip = clientIp(request, env.CMS_CLIENT_IP_HEADER);
+  const attempts = isRateLimited(RULES.badCredential, ip);
+  if (!attempts.allowed) {
+    return { ok: false, response: rateLimitedResponse(attempts, RULES.badCredential, { jsonrpc: "2.0", id: null }) };
+  }
+
   const key = await verifyApiKey(db, presented);
   if (!key) {
+    // Only a failure spends the budget; a valid key is metered by its own rule.
+    rateLimit(RULES.badCredential, ip);
     // Identical answer for malformed, unknown, revoked and expired keys: the
     // difference is not the caller's business and saying it aids a guesser.
     return {
@@ -101,6 +116,13 @@ export async function authenticate(request: Request): Promise<AuthOutcome> {
         { status: 403 },
       ),
     };
+  }
+
+  // One budget per key for the whole session's worth of tool calls: an agent
+  // is expected to think between calls, not to loop.
+  const budget = rateLimit(RULES.mcp, key.id);
+  if (!budget.allowed) {
+    return { ok: false, response: rateLimitedResponse(budget, RULES.mcp, { jsonrpc: "2.0", id: null }) };
   }
 
   return { ok: true, actor: actorFromApiKey(key) };

@@ -1,7 +1,9 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { registry } from "@cms/capabilities";
-import { HTTP_STATUS, isCmsError, type AnyCapability } from "@cms/core";
+import { HTTP_STATUS, createLogger, isCmsError, type AnyCapability } from "@cms/core";
+
+const log = createLogger("api.v1");
 
 /**
  * Routing for the public API, derived from the capability registry.
@@ -83,7 +85,7 @@ export function errorResponse(error: unknown): Response {
     );
   }
   // Never leak an internal message to an unauthenticated caller.
-  console.error("[api/v1] unhandled:", error);
+  log.error("unhandled error", { error });
   return Response.json({ error: "internal", message: "Something went wrong." }, { status: 500 });
 }
 

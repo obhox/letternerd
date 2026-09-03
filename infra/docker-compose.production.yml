@@ -17,6 +17,10 @@ services:
     image: ${CMS_IMAGE_PREFIX:-ghcr.io/obhox/letternerd}-db:${CMS_IMAGE_TAG:-latest}
     pull_policy: always
     restart: "no"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     command: ["node_modules/.bin/tsx", "src/migrate.ts"]
     environment:
       DATABASE_URL: ${DATABASE_URL}
@@ -27,6 +31,32 @@ services:
     # the cached image and silently changes nothing.
     pull_policy: always
     restart: unless-stopped
+    # The container already runs as `cms` (the Dockerfile's USER); these close
+    # the doors a non-root user could still walk through. no-new-privileges
+    # stops a setuid binary from escalating; dropping every capability removes
+    # what a web app never uses (it binds :3000, above the privileged range);
+    # a read-only root filesystem means a code-execution bug cannot write a
+    # persistent payload into the image's own files.
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    # The two places the app legitimately writes. /tmp is sharp's scratch space
+    # during image processing; .next/cache is where Next keeps optimised images
+    # and fetch results. Both are disposable, so tmpfs: gone on restart, never
+    # on disk, and outside the read-only root.
+    tmpfs:
+      - /tmp
+      - /repo/apps/studio/.next/cache
+    # A ceiling so a runaway request or a leak degrades this service instead of
+    # the whole host, which Postgres and the other projects share. Compose
+    # honours deploy.resources.limits outside Swarm.
+    deploy:
+      resources:
+        limits:
+          memory: 1536M
+          cpus: "1.5"
     expose:
       - "3000"
     environment:
@@ -51,8 +81,27 @@ services:
       MEDIA_CDN_URL: ${MEDIA_CDN_URL}
       MEDIA_MAX_UPLOAD_BYTES: ${MEDIA_MAX_UPLOAD_BYTES:-26214400}
 
-      WEBHOOK_SIGNING_KEY: ${SERVICE_PASSWORD_WEBHOOK}
-      CRAWLER_IP_SALT: ${SERVICE_PASSWORD_CRAWLERSALT}
+      # Encrypts stored OAuth tokens and, now that webhook signing secrets sit
+      # under the same cipher, every webhook's secret too. The studio boots
+      # without it and refuses to create a webhook or connect Search Console
+      # until it is set — there is no plaintext fallback. openssl rand -hex 32.
+      ANALYTICS_ENCRYPTION_KEY: ${ANALYTICS_ENCRYPTION_KEY}
+
+      # Closed unless said otherwise: accounts then come only from invitations
+      # and the operator's scripts. Passed through rather than hardcoded so a
+      # first deploy can open it briefly from the Coolify UI.
+      CMS_ALLOW_SIGNUP: ${CMS_ALLOW_SIGNUP:-false}
+      # The header the rate limiters read the client address from. Traefik
+      # overwrites X-Forwarded-For with the real peer; behind Cloudflare set
+      # cf-connecting-ip, or every visitor shares one Cloudflare edge's budget.
+      CMS_CLIENT_IP_HEADER: ${CMS_CLIENT_IP_HEADER:-x-forwarded-for}
+      # Lowest site role that must enrol TOTP before the studio serves it. The
+      # default here is the production default, spelled out because an empty
+      # string is not "unset" to the enum that validates it.
+      CMS_REQUIRE_2FA_ROLE: ${CMS_REQUIRE_2FA_ROLE:-owner}
+      # `off` disables the studio's request budgets. Exists for end-to-end
+      # suites; leave it unset here.
+      CMS_RATE_LIMIT: ${CMS_RATE_LIMIT:-}
 
       RESEND_API_KEY: ${RESEND_API_KEY}
       EMAIL_FROM: ${EMAIL_FROM}

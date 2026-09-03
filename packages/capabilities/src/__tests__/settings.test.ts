@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { getTableName } from "drizzle-orm";
 import { isCmsError, type Actor, type CapabilityServices } from "@cms/core";
 import { INVITABLE_ROLES } from "@cms/core/roles";
 import { hashApiKey } from "@cms/db/api-keys";
-import { settingsCapabilities } from "../settings";
+import { openWebhookSecret, settingsCapabilities } from "../settings";
 
 /**
  * Site administration, tested against a hand-rolled database.
@@ -100,6 +100,11 @@ function createFakeDb(config: FakeConfig = {}): FakeDb {
 }
 
 const NOW = new Date("2026-03-01T12:00:00.000Z");
+
+// Webhook signing secrets are sealed with the same key as OAuth tokens.
+beforeAll(() => {
+  process.env.ANALYTICS_ENCRYPTION_KEY = "3f9a1c7e5b2d8f0a4c6e9b1d3f5a7c9e2b4d6f8a0c1e3b5d7f9a2c4e6b8d0f1a";
+});
 
 const OWNER: Actor = {
   kind: "user",
@@ -515,7 +520,11 @@ describe("webhooks", () => {
 
     expect(result.secret).toBeTypeOf("string");
     expect(result.notice ?? "").toContain("stopped working");
-    expect((fake.payloads[0] as Row)["secret"]).toBe(result.secret);
+    // Sealed at rest: the row holds ciphertext, never the value the caller saw.
+    const stored = (fake.payloads[0] as Row)["secret"] as string;
+    expect(stored).toMatch(/^enc1:/);
+    expect(stored).not.toContain(result.secret as string);
+    expect(openWebhookSecret(stored)).toBe(result.secret);
   });
 
   it("refuses a plaintext-http endpoint, where the signature would be decorative", async () => {
@@ -533,5 +542,57 @@ describe("webhooks", () => {
     });
     const result = (await run("list_webhooks", {}, fake)) as { webhooks: Row[] };
     expect(JSON.stringify(result)).not.toContain("secret");
+  });
+});
+
+describe("webhook destinations", () => {
+  it.each([
+    ["https://169.254.169.254/latest/meta-data", "literal_private_address"],
+    ["https://localhost:3000/api/cron/publish-scheduled", "blocked_hostname"],
+    ["https://postgres/", "blocked_hostname"],
+    ["https://[::1]/", "literal_private_address"],
+    ["https://user:pw@hooks.example/", "credentials_in_url"],
+  ])("refuses %s (%s) before writing anything", async (url, problem) => {
+    const fake = createFakeDb();
+    await expect(run("upsert_webhook", { url, events: ["document.published"] }, fake)).rejects.toMatchObject({
+      code: "invalid_input",
+      details: { problem },
+    });
+    expect(fake.payloads).toHaveLength(0);
+  });
+
+  it("refuses a hostname that resolves to a private address when a resolver is available", async () => {
+    const fake = createFakeDb();
+    const services = {
+      ...servicesOf(fake),
+      net: { resolve: async () => ["93.184.216.34", "10.0.0.5"] },
+    } as unknown as CapabilityServices;
+    await expect(
+      capability("upsert_webhook").invoke({ url: "https://hooks.example/x", events: ["document.published"] }, { actor: OWNER, services }),
+    ).rejects.toMatchObject({ code: "invalid_input", details: { problem: "resolves_to_private_address" } });
+    expect(fake.payloads).toHaveLength(0);
+  });
+});
+
+describe("publishable key origins", () => {
+  it("defaults an empty allow-list to the site's own origins", async () => {
+    const fake = createFakeDb({
+      reads: {
+        sites: [[{ id: "site-1", baseUrl: "https://blog.example", additionalDomains: ["https://staging.blog.example/"] }]],
+      },
+      inserts: { api_keys: [[{ id: "k1", name: "web", type: "publishable", keyPrefix: "cms_pk_aaaaaa", scopes: [], allowedOrigins: ["https://blog.example", "https://staging.blog.example"], lastUsedAt: null, expiresAt: null, revokedAt: null, createdAt: NOW }]] },
+      },
+    );
+    await run("create_api_key", { name: "web", type: "publishable" }, fake);
+    expect((fake.payloads[0] as Row)["allowedOrigins"]).toEqual(["https://blog.example", "https://staging.blog.example"]);
+  });
+
+  it("normalises supplied origins and does not consult the site for other key types", async () => {
+    const fake = createFakeDb({
+      inserts: { api_keys: [[{ id: "k1", name: "ci", type: "admin", keyPrefix: "cms_ak_aaaaaa", scopes: [], allowedOrigins: [], lastUsedAt: null, expiresAt: null, revokedAt: null, createdAt: NOW }]] },
+    });
+    await run("create_api_key", { name: "ci", type: "admin", allowedOrigins: ["https://x.example/path/"] }, fake);
+    expect((fake.payloads[0] as Row)["allowedOrigins"]).toEqual(["https://x.example"]);
+    expect(fake.calls.some((c) => c.table === "sites")).toBe(false);
   });
 });

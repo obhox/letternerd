@@ -1,7 +1,8 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join } from "node:path";
 import { rebasePath } from "./detect";
-import type { InstallPlan } from "./snippets";
+import { resolveInside } from "./safe-path";
+import type { InstallPlan, PlanFile } from "./snippets";
 
 /**
  * Writing the plan, and refusing to write over anything.
@@ -12,6 +13,14 @@ import type { InstallPlan } from "./snippets";
  * output someone reads, and an overwritten one is work that no longer exists.
  * So every existing path is left exactly as it is and reported, and the summary
  * is the deliverable rather than an afterthought.
+ *
+ * The second rule is that nothing is written outside the project, and it is
+ * enforced before the first rule gets a chance to matter. The plan is untrusted
+ * input from a server; every path is checked up front, and a single bad one
+ * aborts the whole apply with nothing written — because a plan that contains
+ * `../../.bashrc` is not a plan with one bad entry, it is a plan from something
+ * that is not the studio, and the "safe" entries next to it deserve no more
+ * trust than the bad one did.
  */
 
 export type Action = "create" | "skip";
@@ -37,13 +46,68 @@ export interface ApplyOptions {
   dryRun: boolean;
 }
 
+/**
+ * Thrown when a plan names a path the CLI will not write to.
+ *
+ * Carries the per-file outcomes so the caller can print the same summary it
+ * would have printed on success, with the rejected entries marked as skipped
+ * and their reasons alongside — the reason is the finding, and it belongs in
+ * the output rather than in a stack trace.
+ */
+export class UnsafePlanError extends Error {
+  readonly outcomes: FileOutcome[];
+
+  constructor(outcomes: FileOutcome[]) {
+    const rejected = outcomes.filter((outcome) => outcome.action === "skip");
+    super(
+      `The plan names ${rejected.length} path${rejected.length === 1 ? "" : "s"} outside what this ` +
+        "command may write, so nothing was written.",
+    );
+    this.name = "UnsafePlanError";
+    this.outcomes = outcomes;
+  }
+}
+
+interface Placed {
+  file: PlanFile;
+  /** After rebasing onto `src/` where that applies. */
+  relative: string;
+  absolute: string;
+}
+
+/**
+ * Every path resolved and checked, before any of them is touched.
+ *
+ * Returns the placements only if all of them are safe. Otherwise it throws with
+ * an outcome per file — `create` for the ones that would have been fine, so the
+ * summary still shows the whole plan — and the caller writes nothing.
+ */
+function placeAll(plan: InstallPlan, options: ApplyOptions): Placed[] {
+  const placed: Placed[] = [];
+  const outcomes: FileOutcome[] = [];
+  let rejected = false;
+
+  for (const file of plan.files) {
+    const relative = rebasePath(file.path, options.srcDir);
+    const bytes = Buffer.byteLength(file.contents, "utf8");
+    try {
+      placed.push({ file, relative, absolute: resolveInside(options.root, relative) });
+      outcomes.push({ path: relative, action: "create", reason: file.purpose, bytes });
+    } catch (error) {
+      rejected = true;
+      outcomes.push({ path: relative, action: "skip", reason: (error as Error).message, bytes });
+    }
+  }
+
+  if (rejected) throw new UnsafePlanError(outcomes);
+  return placed;
+}
+
 export function applyPlan(plan: InstallPlan, options: ApplyOptions): ApplyResult {
   const outcomes: FileOutcome[] = [];
   const seen = new Set<string>();
 
-  for (const file of plan.files) {
-    const relative = rebasePath(file.path, options.srcDir);
-    const absolute = resolve(options.root, relative);
+  for (const { file, relative, absolute } of placeAll(plan, options)) {
     const bytes = Buffer.byteLength(file.contents, "utf8");
 
     if (seen.has(relative)) {

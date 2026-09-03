@@ -1,6 +1,7 @@
 "use client";
 
 import { createAuthClient } from "better-auth/react";
+import { twoFactorClient } from "better-auth/client/plugins";
 
 /**
  * The browser half of better-auth.
@@ -21,6 +22,21 @@ import { createAuthClient } from "better-auth/react";
 export const authClient = createAuthClient({
   baseURL: process.env.NEXT_PUBLIC_CMS_STUDIO_URL,
   basePath: "/api/auth",
+  plugins: [
+    twoFactorClient({
+      /**
+       * A password that checks out on an account with a second factor gets a
+       * half-session and this callback, not a signed-in studio. The sign-in
+       * form handles the navigation itself so it can carry the `redirect`
+       * target through; this fallback covers any other sign-in path.
+       */
+      onTwoFactorRedirect() {
+        if (typeof window !== "undefined" && !window.location.pathname.startsWith("/two-factor")) {
+          window.location.assign("/two-factor");
+        }
+      },
+    }),
+  ],
 });
 
 export const { signIn, signUp, signOut, useSession } = authClient;

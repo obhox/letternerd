@@ -70,6 +70,18 @@ export function SignInForm({ redirectTo }: { redirectTo: string }) {
     }
 
     /**
+     * An account with a second factor enrolled does not get a session here;
+     * it gets a short-lived challenge cookie and this flag. The destination
+     * rides along so the person lands where they were going once the code is
+     * accepted — validated again on that page, as everywhere else.
+     */
+    if ((result.data as { twoFactorRedirect?: boolean } | null)?.twoFactorRedirect) {
+      const next = safeRedirect(redirectTo);
+      router.replace(next === "/" ? "/two-factor" : `/two-factor?redirect=${encodeURIComponent(next)}`);
+      return;
+    }
+
+    /**
      * Re-validated even though the server already validated it into this prop.
      *
      * The check is cheap and the failure mode is not: this is the moment an

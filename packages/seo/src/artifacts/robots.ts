@@ -59,7 +59,17 @@ export function buildRobotsTxt(site: SeoSite, opts: RobotsOptions = {}): string 
   const { aiCrawlers = "allow", sitemapPath = "/sitemap.xml", disallow = [] } = opts;
 
   const lines: string[] = ["User-agent: *", "Allow: /"];
-  for (const path of disallow) lines.push(`Disallow: ${path}`);
+  // A path arrives from a settings form, and robots.txt is line-oriented: a
+  // line break inside one would end the directive and start another, so
+  // `"/\nUser-agent: Googlebot\nDisallow: /"` is a working injection that
+  // de-indexes the site. Breaks are removed rather than the entry dropped —
+  // the remainder is at worst a Disallow for a path that does not exist —
+  // and an entry that is blank once trimmed would be `Disallow:` with nothing
+  // after it, which some parsers read as "allow everything" for that group.
+  for (const path of disallow) {
+    const cleaned = path.replace(/[\r\n]/g, "").trim();
+    if (cleaned) lines.push(`Disallow: ${cleaned}`);
+  }
 
   lines.push("");
   lines.push(

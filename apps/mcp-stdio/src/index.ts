@@ -2,8 +2,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { registry } from "@cms/capabilities";
-import { isCmsError, mcpAnnotations, rawShapeOf, type Actor } from "@cms/core";
+import { invokeAudited, registry } from "@cms/capabilities";
+import { isCmsError, mcpAnnotations, rawShapeOf, unauthenticated, type Actor } from "@cms/core";
 import { createDb } from "@cms/db";
 import { verifyApiKey } from "@cms/db/api-keys";
 import { actorFromApiKey } from "@cms/auth";
@@ -49,7 +49,27 @@ async function main() {
     process.exit(1);
   }
 
-  const actor: Actor = actorFromApiKey(verified);
+  /**
+   * Verified again on every tool call, with a short cache.
+   *
+   * `verifyApiKey` is the only place revocation and expiry are checked. A
+   * process that verified once at startup would keep a revoked key's full
+   * write access for as long as it stayed running — the revoke button in the
+   * studio would appear to work and do nothing. Sixty seconds matches the
+   * session cookie cache in `@cms/auth`: it is exactly how long a revoked key
+   * keeps working here, and it keeps a chatty agent from paying a database
+   * round trip per call.
+   */
+  const REVERIFY_MS = 60_000;
+  let cached: { actor: Actor; at: number } = { actor: actorFromApiKey(verified), at: Date.now() };
+  async function currentActor(): Promise<Actor> {
+    if (Date.now() - cached.at < REVERIFY_MS) return cached.actor;
+    const live = await verifyApiKey(db, apiKey);
+    if (!live) throw unauthenticated("This API key has been revoked or has expired.");
+    cached = { actor: actorFromApiKey(live), at: Date.now() };
+    return cached.actor;
+  }
+  const actor: Actor = cached.actor;
 
   const storage = createStorage({
     driver: (process.env.MEDIA_STORAGE_DRIVER as "s3" | "local") ?? "local",
@@ -86,7 +106,11 @@ async function main() {
       },
       async (input: unknown) => {
         try {
-          const data = await cap.invoke(input, { actor, services });
+          const data = await invokeAudited(cap, input, {
+            actor: await currentActor(),
+            services,
+            transport: "stdio",
+          });
           return {
             content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
           };

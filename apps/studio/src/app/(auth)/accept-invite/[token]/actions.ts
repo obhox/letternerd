@@ -4,10 +4,14 @@ import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { acceptInvitation, hashInvitationToken } from "@cms/auth";
-import { isCmsError } from "@cms/core";
+import { createLogger, isCmsError } from "@cms/core";
+
+const log = createLogger("accept-invite");
 import { createDb } from "@cms/db";
 import * as schema from "@cms/db/schema";
+import { env } from "@/env";
 import { getSession } from "@/lib/auth";
+import { RULES, clientIp, rateLimit } from "@/server/rate-limit";
 
 export interface AcceptInviteState {
   /** Present only after a failed attempt; a fresh form carries `null`. */
@@ -71,7 +75,20 @@ export async function acceptInviteAction(
   const token = String(formData.get("token") ?? "");
   if (!token) return { error: UNKNOWN_TOKEN };
 
-  const session = await getSession(await headers());
+  const requestHeaders = await headers();
+
+  /**
+   * A brake on token guessing, per source address. The token is 256 bits so
+   * guessing cannot succeed, but every attempt is a database lookup, and a
+   * budget makes the attempt visibly pointless rather than merely futile.
+   */
+  const ip = clientIp(new Request("http://studio.invalid", { headers: requestHeaders }), env.CMS_CLIENT_IP_HEADER);
+  const budget = rateLimit(RULES.acceptInvite, ip);
+  if (!budget.allowed) {
+    return { error: `Too many attempts. Wait ${budget.retryAfterSeconds} seconds and try again.` };
+  }
+
+  const session = await getSession(requestHeaders);
   if (!session) {
     // The session expired between rendering the page and submitting it. Send
     // them back through sign-in with the token intact rather than reporting a
@@ -92,7 +109,7 @@ export async function acceptInviteAction(
       // Anything unrecognised is a bug or an outage. It is logged for whoever
       // is on call and reduced to a sentence for the person in front of the
       // screen — a stack trace here would leak internals and help nobody.
-      console.error("accept-invite failed", error);
+      log.error("accept-invite failed", { error });
       return { error: "Something went wrong accepting this invitation. Please try again." };
     }
 

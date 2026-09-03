@@ -99,6 +99,8 @@ export const auth: Auth =
     trustedOrigins: env.CMS_TRUSTED_ORIGINS,
     requireEmailVerification: env.CMS_REQUIRE_EMAIL_VERIFICATION,
     sendVerificationEmail: resolveVerificationSender(),
+    allowSignUp: env.CMS_ALLOW_SIGNUP,
+    clientIpHeader: env.CMS_CLIENT_IP_HEADER,
   });
 
 if (process.env.NODE_ENV !== "production") {

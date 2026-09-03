@@ -10,9 +10,15 @@
  * already had, and the new slug is retained as an alias that still resolves.
  *
  * Ids therefore accrete. That is deliberate — they are a published URL surface,
- * not an implementation detail, and nothing here ever removes one.
+ * not an implementation detail, and nothing here ever removes one — with a
+ * single exception. An id that would clobber a DOM property on the consuming
+ * page (see `clobber-guard`) is never reused and never kept as an alias, even
+ * if an earlier publish emitted it: the clobber guard strips it from the HTML
+ * regardless, so listing it here would only advertise an anchor that does not
+ * resolve. The heading keeps its citation through the suffixed slug instead.
  */
 
+import { isPublishableId } from "./clobber-guard";
 import { similarity } from "./similarity";
 import type { HeadingEntry } from "./types";
 
@@ -123,7 +129,10 @@ export function reconcileHeadings(
     if (!draft) continue;
     const previous = matched[i];
 
-    let id = previous && !used.has(previous.id) ? previous.id : draft.slug;
+    let id =
+      previous && !used.has(previous.id) && isPublishableId(previous.id)
+        ? previous.id
+        : draft.slug;
     if (used.has(id)) {
       let suffix = 1;
       while (used.has(`${draft.slug}-${suffix}`)) suffix++;
@@ -133,13 +142,14 @@ export function reconcileHeadings(
 
     const aliases: string[] = [];
     for (const alias of previous?.aliases ?? []) {
-      if (alias !== id && !aliases.includes(alias)) aliases.push(alias);
+      if (alias !== id && !aliases.includes(alias) && isPublishableId(alias)) aliases.push(alias);
     }
     // The previous live id becomes an alias when it loses the collision above,
     // otherwise the newly computed slug does. Either way the URL that used to
     // work keeps working.
     for (const candidate of [previous?.id, draft.slug]) {
-      if (candidate && candidate !== id && !aliases.includes(candidate)) aliases.push(candidate);
+      if (!candidate || candidate === id || aliases.includes(candidate)) continue;
+      if (isPublishableId(candidate)) aliases.push(candidate);
     }
 
     result.push({ depth: draft.depth, text: draft.text, id, aliases });

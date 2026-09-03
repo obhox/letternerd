@@ -1,6 +1,17 @@
 /** @type {import('next').NextConfig} */
+const studioHost = (() => {
+  try {
+    return process.env.CMS_STUDIO_URL ? new URL(process.env.CMS_STUDIO_URL).host : undefined;
+  } catch {
+    return undefined;
+  }
+})();
+
 const nextConfig = {
   reactStrictMode: true,
+
+  // Advertising the framework in a response header helps nobody but a scanner.
+  poweredByHeader: false,
 
   // The workspace packages ship as TypeScript source rather than build output,
   // so Next compiles them itself. This is why the Docker build needs the whole
@@ -32,7 +43,16 @@ const nextConfig = {
    * without raising these reintroduces the same silent truncation.
    */
   experimental: {
-    serverActions: { bodySizeLimit: "36mb" },
+    serverActions: {
+      bodySizeLimit: "36mb",
+      /**
+       * Server Actions defend against CSRF by comparing `Origin` to `Host`.
+       * Behind a reverse proxy `Host` is whatever the proxy forwards, so the
+       * comparison is pinned to the origin this studio is configured to live
+       * at rather than to a header the proxy owns.
+       */
+      ...(studioHost ? { allowedOrigins: [studioHost] } : {}),
+    },
     // Next names this under experimental; middlewareClientMaxBodySize is the
     // deprecated spelling of the same setting.
     proxyClientMaxBodySize: "36mb",

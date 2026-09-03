@@ -1,0 +1,41 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly, at an odd minute so it does not queue behind everyone else's
+    # top-of-the-hour jobs. The schedule exists so a new query pack still
+    # runs against `main` in a week when nobody pushes.
+    - cron: "37 4 * * 1"
+
+permissions:
+  contents: read
+  # Uploads the SARIF results to the repository's code-scanning alerts.
+  security-events: write
+  # Read access to workflow runs, which CodeQL needs on a private repository
+  # and nowhere else.
+  actions: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          languages: javascript-typescript
+          # The extractor reads TypeScript source directly, so there is no
+          # pnpm install and no build here — and nothing for a compromised
+          # dependency's postinstall to run in a job that holds a write token.
+          build-mode: none
+
+      - uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          category: "/language:javascript-typescript"

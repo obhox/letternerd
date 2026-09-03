@@ -19,6 +19,7 @@
  *   stable anchors                  overrides it with the id we published before
  *   autolink headings               so the copy-link points at the live id
  *   shiki                           highlighting, before anything is stripped
+ *   clobber guard                   ids that would shadow DOM globals, srcset
  *   sanitize                        last, so nothing added after it is trusted
  *   stringify
  */
@@ -40,6 +41,7 @@ import { VFile } from "vfile";
 import type { Element, Root as HastRoot } from "hast";
 import type { Root as MdastRoot } from "mdast";
 
+import { rehypeClobberGuard } from "./clobber-guard";
 import { emptyHarvest, transformDirectives } from "./directives";
 import { contentHash } from "./hash";
 import {
@@ -188,6 +190,9 @@ export async function renderDocument(input: RenderInput): Promise<RenderResult> 
       // a reason to fail a publish. It renders unhighlighted.
       onError: () => {},
     })
+    // Immediately before the sanitiser, so it sees every id and `srcset` the
+    // passes above produced and nothing runs between it and the output.
+    .use(rehypeClobberGuard)
     .use(rehypeSanitize, contentSanitizeSchema)
     .use(rehypeStringify);
 

@@ -1,4 +1,7 @@
 import { cookies } from "next/headers";
+import { createLogger } from "@cms/core";
+
+const log = createLogger("oauth.google");
 import { env } from "@/env";
 import { currentUser, dispatch, studioContext } from "@/server/context";
 import {
@@ -131,12 +134,12 @@ export async function GET(request: Request): Promise<Response> {
     if (!response.ok) {
       // The body can echo the client secret back in some error shapes; log the
       // status only.
-      console.error(`[oauth/google] token exchange failed with HTTP ${response.status}`);
+      log.error("token exchange failed", { status: response.status });
       return back({ error: "exchange_failed" });
     }
     token = (await response.json()) as GoogleTokenResponse;
   } catch (error) {
-    console.error("[oauth/google] token exchange could not be completed", error);
+    log.error("token exchange could not be completed", { error });
     return back({ error: "exchange_failed" });
   }
 
@@ -168,10 +171,10 @@ export async function GET(request: Request): Promise<Response> {
       const body = (await listed.json()) as { siteEntry?: SearchConsoleSiteEntry[] };
       property = pickProperty(body.siteEntry ?? [], ctx.site.baseUrl);
     } else {
-      console.error(`[oauth/google] property list failed with HTTP ${listed.status}`);
+      log.error("property list failed", { status: listed.status });
     }
   } catch (error) {
-    console.error("[oauth/google] property list could not be fetched", error);
+    log.error("property list could not be fetched", { error });
   }
 
   if (!property) return back({ error: "no_property" });
@@ -187,7 +190,7 @@ export async function GET(request: Request): Promise<Response> {
   });
 
   if (!result.ok) {
-    console.error(`[oauth/google] connect_search_console refused: ${result.code}`);
+    log.error("connect_search_console refused", { code: result.code });
     return back({ error: "save_failed" });
   }
 

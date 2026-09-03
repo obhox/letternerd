@@ -4,7 +4,7 @@ import { and, asc, desc, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import { conflict, defineCapability, invalidInput, notFound } from "@cms/core";
 import { checksumOf, mediaRef, processUpload } from "@cms/media";
 import * as schema from "@cms/db/schema";
-import { decodeCursor, encodeCursor } from "./shared";
+import { decodeCursor, encodeCursor, requireSiteOwnedRow } from "./shared";
 
 /**
  * Media capabilities.
@@ -22,7 +22,7 @@ import { decodeCursor, encodeCursor } from "./shared";
  * Matches `packages/media`'s own ceiling, restated here because this layer
  * rejects before allocating anything.
  */
-const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 
 /**
  * Base64 is the transport because MCP tools speak JSON and cannot send
@@ -36,7 +36,7 @@ const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
  * allocates the decoded buffer before anyone can measure it, so checking after
  * the decode is checking after the memory has already been spent.
  */
-const MAX_BASE64_CHARS = Math.ceil(MAX_UPLOAD_BYTES / 3) * 4;
+export const MAX_BASE64_CHARS = Math.ceil(MAX_UPLOAD_BYTES / 3) * 4;
 
 /** Data-URL prefix a browser's `FileReader.readAsDataURL` leaves on the front. */
 const DATA_URL_PREFIX = /^data:[^;,]*;base64,/;
@@ -241,10 +241,20 @@ export const uploadMedia = defineCapability({
     // without performing it. The message quotes the decoded size because that
     // is the number the person looking at the file in Finder recognises.
     const estimatedBytes = Math.floor((encoded.length * 3) / 4);
-    if (estimatedBytes > MAX_UPLOAD_BYTES) {
+    /**
+     * The deployment may lower the ceiling (`MEDIA_MAX_UPLOAD_BYTES`), never
+     * raise it: the schema above already refused anything past the compiled-in
+     * maximum, so a configured value larger than that has no effect.
+     */
+    const configured = services.limits?.maxUploadBytes;
+    const maxBytes =
+      configured !== undefined && Number.isFinite(configured) && configured > 0
+        ? Math.min(configured, MAX_UPLOAD_BYTES)
+        : MAX_UPLOAD_BYTES;
+    if (estimatedBytes > maxBytes) {
       throw invalidInput(
-        `"${input.filename}" is about ${Math.round(estimatedBytes / 1024 / 1024)} MB, which exceeds the ${MAX_UPLOAD_BYTES / 1024 / 1024} MB limit.`,
-        { estimatedBytes, maxBytes: MAX_UPLOAD_BYTES },
+        `"${input.filename}" is about ${Math.round(estimatedBytes / 1024 / 1024)} MB, which exceeds the ${Math.round(maxBytes / 1024 / 1024)} MB limit.`,
+        { estimatedBytes, maxBytes },
       );
     }
 
@@ -286,6 +296,17 @@ export const uploadMedia = defineCapability({
      * name them.
      */
     const assetId = randomUUID();
+
+    if (input.folderId) {
+      await requireSiteOwnedRow(
+        services.db,
+        schema.mediaFolders,
+        { id: schema.mediaFolders.id, siteId: schema.mediaFolders.siteId },
+        input.folderId,
+        actor.siteId,
+        "Folder",
+      );
+    }
 
     const processed = await processUpload({
       buffer,

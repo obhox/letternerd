@@ -179,3 +179,32 @@ describe("acceptInvitation", () => {
     expect(condition.args).not.toContain("plaintext-token");
   });
 });
+
+describe("acceptInvitation under contention", () => {
+  it("claims the row with a conditional update, and refuses when the update matched nothing", async () => {
+    const { createFakeDb } = await import("./fake-db");
+    const token = "tok";
+    const fake = createFakeDb({
+      siteInvitations: [
+        {
+          id: "inv-1",
+          siteId: "site-1",
+          email: "ada@example.com",
+          role: "editor",
+          tokenHash: hashInvitationToken(token),
+          expiresAt: new Date(Date.now() + 60_000),
+          acceptedAt: null,
+        },
+      ],
+    });
+
+    // The read saw an unclaimed row, but by the time the UPDATE ran another
+    // transaction had claimed it: zero rows matched.
+    fake.setUpdateMatches(0);
+    await expect(
+      acceptInvitation({ db: fake.db, token, userId: "u1", userEmail: "ada@example.com", emailVerified: true }),
+    ).rejects.toMatchObject({ code: "conflict" });
+    // Nothing was granted on the losing side.
+    expect(fake.inserts.filter((i) => i.table === "siteMembers")).toHaveLength(0);
+  });
+});

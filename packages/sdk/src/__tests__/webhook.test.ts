@@ -124,6 +124,25 @@ describe("verifyWebhookSignature", () => {
     ).toEqual({ ok: false, reason: "malformed" });
   });
 
+  it("accepts a digest that arrived upper-cased", () => {
+    // Hex is case-insensitive, and a proxy or a hand-rolled sender may well
+    // upper-case it. Rejecting `ABCDEF` for `abcdef` would be a false mismatch.
+    const upperHex = (header: string) =>
+      header.replace(/v1=([0-9a-f]+)/, (_, hex: string) => `v1=${hex.toUpperCase()}`);
+    const header = upperHex(signWebhookPayload(SECRET, BODY, NOW_SECONDS));
+
+    expect(header).toMatch(/v1=[0-9A-F]{64}$/);
+    expect(
+      verifyWebhookSignature({ secret: SECRET, rawBody: BODY, signatureHeader: header, now }),
+    ).toEqual({ ok: true });
+
+    // Case-folding is not leniency: a wrong digest in upper case is still wrong.
+    const wrong = upperHex(signWebhookPayload("whsec_wrong", BODY, NOW_SECONDS));
+    expect(
+      verifyWebhookSignature({ secret: SECRET, rawBody: BODY, signatureHeader: wrong, now }),
+    ).toEqual({ ok: false, reason: "mismatch" });
+  });
+
   it("verifies the raw bytes, not a re-serialisation of them", () => {
     // The same object, sent with the whitespace the CMS's serialiser produced.
     // A verifier that parsed and re-stringified would compare a different

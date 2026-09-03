@@ -12,7 +12,9 @@
     "test": "vitest run --passWithNoTests",
     "create-account": "tsx --env-file=.env scripts/create-account.ts",
     "migrate-media": "tsx --env-file=.env scripts/migrate-media.ts",
-    "seed-demo": "tsx --env-file=.env scripts/seed-demo.ts"
+    "seed-demo": "tsx --env-file=.env scripts/seed-demo.ts",
+    "reencrypt-secrets": "tsx --env-file=.env scripts/reencrypt-secrets.ts",
+    "backfill-key-origins": "tsx --env-file=.env scripts/backfill-key-origins.ts"
   },
   "dependencies": {
     "@cms/analytics": "workspace:*",

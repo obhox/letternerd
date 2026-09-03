@@ -1,4 +1,5 @@
 import { CmsError, codeForStatus, type CmsErrorCode } from "./errors";
+import { assertSecureOrigin } from "./transport-guard";
 
 /**
  * The transport. One place that knows about headers, caching and status codes.
@@ -84,6 +85,9 @@ export class HttpClient {
   constructor(options: HttpClientOptions) {
     if (!options.baseUrl) throw new TypeError("createCmsClient: `baseUrl` is required.");
     if (!options.key) throw new TypeError("createCmsClient: `key` is required.");
+    // The key goes on every request this client makes, so the scheme is checked
+    // once here rather than per call — and before anything is stored.
+    assertSecureOrigin(options.baseUrl, "createCmsClient: `baseUrl`");
 
     this.baseUrl = options.baseUrl.replace(/\/+$/, "");
     this.key = options.key;

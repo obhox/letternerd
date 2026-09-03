@@ -10,7 +10,7 @@ import {
   preconditionFailed,
 } from "@cms/core";
 import * as schema from "@cms/db/schema";
-import { requireSiteRow } from "./shared";
+import { requireSiteRow, requireSiteOwnedRow } from "./shared";
 
 /**
  * Editorial capabilities: authors, taxonomy, entities and redirects.
@@ -292,6 +292,18 @@ export const upsertAuthor = defineCapability({
       if (!member) {
         throw invalidInput("That user is not a member of this site, so it cannot own a byline.");
       }
+    }
+
+    // The avatar, likewise, must be one of this site's own assets.
+    if (input.avatarAssetId) {
+      await requireSiteOwnedRow(
+        services.db,
+        schema.mediaAssets,
+        { id: schema.mediaAssets.id, siteId: schema.mediaAssets.siteId },
+        input.avatarAssetId,
+        actor.siteId,
+        "Avatar asset",
+      );
     }
 
     const fields = {

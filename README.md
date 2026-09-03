@@ -54,3 +54,8 @@ pnpm -r test
 
 Coolify, one project with a Coolify-managed Postgres resource. Images build in
 GitHub Actions and are pulled by tag — see `infra/DEPLOY.md`.
+
+## Security
+
+Report a vulnerability as described in `SECURITY.md`. `docs/THREAT_MODEL.md`
+names the assets, the trust boundaries and the file that defends each one.

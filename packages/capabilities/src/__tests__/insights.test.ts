@@ -579,3 +579,24 @@ describe("get_crawler_hits", () => {
     expect(ingest.role).toBe("author");
   });
 });
+
+describe("clampOccurredAt", () => {
+  const now = new Date("2026-03-01T12:00:00.000Z");
+
+  it("keeps a timestamp inside the window", async () => {
+    const { clampOccurredAt } = await import("../insights");
+    expect(clampOccurredAt("2026-03-01T11:00:00.000Z", now).toISOString()).toBe("2026-03-01T11:00:00.000Z");
+    expect(clampOccurredAt("2026-03-01T12:04:00.000Z", now).toISOString()).toBe("2026-03-01T12:04:00.000Z");
+  });
+
+  it("replaces a backdated or far-future claim with the server clock", async () => {
+    const { clampOccurredAt } = await import("../insights");
+    // A publishable key is public; without this, anyone could backdate hits
+    // to before a document was published and rewrite time-to-first-crawl.
+    expect(clampOccurredAt("2019-01-01T00:00:00.000Z", now)).toBe(now);
+    expect(clampOccurredAt("2026-02-28T11:59:00.000Z", now)).toBe(now);
+    expect(clampOccurredAt("2026-03-01T12:10:00.000Z", now)).toBe(now);
+    expect(clampOccurredAt("garbage", now)).toBe(now);
+    expect(clampOccurredAt(undefined, now)).toBe(now);
+  });
+});

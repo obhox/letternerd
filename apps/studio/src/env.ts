@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SITE_ROLES, type SiteRole } from "@cms/core/roles";
 
 /**
  * The studio's server environment, parsed once at import.
@@ -21,6 +22,8 @@ import { z } from "zod";
  * `NEXT_PUBLIC_` variable instead, precisely to avoid that.
  */
 
+export const IS_PRODUCTION = process.env.NODE_ENV === "production";
+
 /**
  * Anything that is not plainly false is true.
  *
@@ -36,6 +39,71 @@ function optionalBoolean(raw: string | undefined): boolean | undefined {
   return !(value === "false" || value === "0" || value === "off" || value === "no");
 }
 
+/**
+ * Values that are not secrets, whatever their length.
+ *
+ * Every one of these has shipped in a file somebody can read: `.env.example`,
+ * the Dockerfile's build-stage placeholders, this repository's own tests. A
+ * deployment that copied the example file and never replaced them boots with a
+ * `CRON_SECRET` that anyone who has read the example knows — and that endpoint
+ * publishes content on every site. The length rule below would pass the
+ * example `BETTER_AUTH_SECRET`, which is 52 characters of prose; this list is
+ * why it does not.
+ *
+ * Matched case-insensitively on the whole value, and additionally by a few
+ * substrings that only ever appear in a placeholder.
+ */
+export const PLACEHOLDER_SECRETS: readonly string[] = [
+  "dev-only-secret-replace-me-with-openssl-rand-base64-48",
+  "dev-cron-secret",
+  "dev-webhook-signing-key",
+  "dev-crawler-ip-salt",
+  "build-time-placeholder-not-a-real-secret-0000000000",
+];
+
+const PLACEHOLDER_FRAGMENTS = ["replace-me", "placeholder", "changeme", "change-me", "example"];
+
+export const MIN_SECRET_LENGTH = 32;
+
+/**
+ * Whether a configured secret is strong enough to protect anything.
+ *
+ * Length is the floor; a known placeholder or a value made of one repeated
+ * character fails regardless. This is not an entropy estimate — it is the
+ * short list of mistakes that actually happen, checked where they can be
+ * refused before they matter.
+ */
+export function secretProblem(value: string): string | null {
+  if (value.length < MIN_SECRET_LENGTH) {
+    return `must be at least ${MIN_SECRET_LENGTH} characters (openssl rand -hex 32)`;
+  }
+  const lower = value.toLowerCase();
+  if (PLACEHOLDER_SECRETS.includes(lower)) return "is the placeholder from .env.example";
+  if (PLACEHOLDER_FRAGMENTS.some((f) => lower.includes(f))) return "looks like a placeholder";
+  if (new Set(value).size < 8) return "has almost no variety; use a generated value";
+  return null;
+}
+
+/**
+ * Enforced in production and merely tolerated elsewhere.
+ *
+ * A laptop running the seeded dev stack with `dev-cron-secret` is fine; the
+ * same value on a public host is a published credential. The check keys on
+ * `NODE_ENV` rather than on a flag of its own so there is no way to ask
+ * production to be lenient.
+ */
+function strongSecret(name: string) {
+  return z
+    .string()
+    .optional()
+    .transform((raw) => raw?.trim() || undefined)
+    .superRefine((value, ctx) => {
+      if (value === undefined || !IS_PRODUCTION) return;
+      const problem = secretProblem(value);
+      if (problem) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `${name} ${problem}` });
+    });
+}
+
 const schema = z.object({
   DATABASE_URL: z.string().min(1),
 
@@ -43,9 +111,16 @@ const schema = z.object({
    * Sessions are signed with this. A short secret is a forgeable cookie, and a
    * forged studio cookie publishes to somebody's live site, so the length is
    * enforced rather than merely documented — `openssl rand -base64 48`
-   * comfortably clears it.
+   * comfortably clears it. In production the placeholder check applies too.
    */
-  BETTER_AUTH_SECRET: z.string().min(32, "must be at least 32 characters"),
+  BETTER_AUTH_SECRET: z
+    .string()
+    .min(MIN_SECRET_LENGTH, `must be at least ${MIN_SECRET_LENGTH} characters`)
+    .superRefine((value, ctx) => {
+      if (!IS_PRODUCTION) return;
+      const problem = secretProblem(value);
+      if (problem) ctx.addIssue({ code: z.ZodIssueCode.custom, message: problem });
+    }),
 
   /**
    * The origin this studio is served from. better-auth builds verification
@@ -60,6 +135,43 @@ const schema = z.object({
   CMS_REQUIRE_EMAIL_VERIFICATION: z.string().optional(),
 
   /**
+   * Whether anyone may create an account, or only people who arrive through an
+   * invitation and the operator's scripts. Unset means open in development and
+   * closed in production: an open registration form on a public host is an
+   * account-spam and verification-email-spam surface even when no membership
+   * follows from it.
+   */
+  CMS_ALLOW_SIGNUP: z.string().optional(),
+
+  /**
+   * The lowest site role that must have a second factor enrolled before the
+   * studio will serve it. `owner` in production by default: an owner mints API
+   * keys and publishes to live sites, and a phished owner password should not
+   * be enough for either. `none` disables the requirement.
+   */
+  CMS_REQUIRE_2FA_ROLE: z.enum([...SITE_ROLES, "none"]).optional(),
+
+  /**
+   * The header carrying the client address behind the reverse proxy, for rate
+   * limiting. Only trustworthy when the proxy overwrites it; `infra/DEPLOY.md`
+   * says which value to use for which proxy.
+   */
+  CMS_CLIENT_IP_HEADER: z
+    .string()
+    .regex(/^[a-z0-9-]+$/i, "must be a header name")
+    .optional(),
+
+  /** `off` disables the studio's own request budgets. For end-to-end suites only. */
+  CMS_RATE_LIMIT: z.string().optional(),
+
+  /**
+   * Bearer token the scheduler presents to `/api/cron/[job]`. Optional so a
+   * studio boots without scheduled jobs, but never weak in production: that
+   * endpoint publishes content across every site.
+   */
+  CRON_SECRET: strongSecret("CRON_SECRET"),
+
+  /**
    * Media storage. Optional as a group: the local driver is a working default
    * for development, and refusing to boot without an S3 bucket would make the
    * studio unusable for anyone not yet uploading images. A misconfigured S3
@@ -72,10 +184,15 @@ const schema = z.object({
   S3_ACCESS_KEY_ID: z.string().optional(),
   S3_SECRET_ACCESS_KEY: z.string().optional(),
   MEDIA_CDN_URL: z.string().optional(),
-  MEDIA_MAX_UPLOAD_BYTES: z.string().optional(),
+  MEDIA_MAX_UPLOAD_BYTES: z
+    .string()
+    .optional()
+    .refine((v) => v === undefined || v.trim() === "" || (Number.isFinite(Number(v)) && Number(v) > 0), {
+      message: "must be a positive number of bytes",
+    }),
 
   /**
-   * Google Search Console, and the key that protects its credentials.
+   * Google Search Console, and the key that protects stored credentials.
    *
    * Optional as a group, and that is a deliberate product decision rather than
    * laziness. A studio with no Google application configured is a complete,
@@ -86,18 +203,16 @@ const schema = z.object({
    * Cloud project before it can boot.
    *
    * `ANALYTICS_ENCRYPTION_KEY` is optional *here* and mandatory the moment a
-   * connection is created: `analyticsTokenCipher()` in `@cms/capabilities`
-   * throws rather than falling back to storing tokens in the clear. That split
-   * is intentional — booting without it is fine, storing a Google refresh token
-   * without it is not, and the second failure is the one that must be loud.
-   *
-   * It is not validated for length here. The one place that knows AES-256 needs
-   * exactly 32 bytes is the cipher, and a second opinion in this file would
-   * eventually disagree with it.
+   * secret is stored: `secretsCipher()` in `@cms/capabilities` throws rather
+   * than falling back to storing OAuth tokens or webhook signing secrets in the
+   * clear. That split is intentional — booting without it is fine, storing a
+   * credential without it is not, and the second failure is the one that must
+   * be loud. The cipher checks the exact byte length; here only placeholder
+   * values are refused.
    */
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
-  ANALYTICS_ENCRYPTION_KEY: z.string().optional(),
+  ANALYTICS_ENCRYPTION_KEY: strongSecret("ANALYTICS_ENCRYPTION_KEY"),
 });
 
 const parsed = schema.safeParse(process.env);
@@ -136,6 +251,11 @@ const trustedOrigins = (raw.CMS_TRUSTED_ORIGINS ?? "")
   .map((origin) => origin.trim())
   .filter((origin) => origin.length > 0);
 
+const require2faRole: SiteRole | null = (() => {
+  const configured = raw.CMS_REQUIRE_2FA_ROLE ?? (IS_PRODUCTION ? "owner" : "none");
+  return configured === "none" ? null : configured;
+})();
+
 export const env = {
   DATABASE_URL: raw.DATABASE_URL,
   BETTER_AUTH_SECRET: raw.BETTER_AUTH_SECRET,
@@ -146,6 +266,12 @@ export const env = {
   EMAIL_FROM: raw.EMAIL_FROM?.trim() || undefined,
   /** `undefined` means "let `@cms/auth` decide from NODE_ENV". */
   CMS_REQUIRE_EMAIL_VERIFICATION: optionalBoolean(raw.CMS_REQUIRE_EMAIL_VERIFICATION),
+  /** Open in development, closed in production, unless said otherwise. */
+  CMS_ALLOW_SIGNUP: optionalBoolean(raw.CMS_ALLOW_SIGNUP) ?? !IS_PRODUCTION,
+  /** `null` means no role is required to enrol. */
+  CMS_REQUIRE_2FA_ROLE: require2faRole,
+  CMS_CLIENT_IP_HEADER: raw.CMS_CLIENT_IP_HEADER?.trim().toLowerCase() || "x-forwarded-for",
+  CRON_SECRET: raw.CRON_SECRET,
 
   MEDIA_STORAGE_DRIVER: raw.MEDIA_STORAGE_DRIVER ?? "local",
   S3_ENDPOINT: raw.S3_ENDPOINT?.trim() || undefined,
@@ -154,11 +280,27 @@ export const env = {
   S3_ACCESS_KEY_ID: raw.S3_ACCESS_KEY_ID?.trim() || undefined,
   S3_SECRET_ACCESS_KEY: raw.S3_SECRET_ACCESS_KEY?.trim() || undefined,
   MEDIA_CDN_URL: raw.MEDIA_CDN_URL?.trim() || undefined,
-  MEDIA_MAX_UPLOAD_BYTES: Number(raw.MEDIA_MAX_UPLOAD_BYTES ?? 26_214_400),
+  MEDIA_MAX_UPLOAD_BYTES: Number(raw.MEDIA_MAX_UPLOAD_BYTES?.trim() || 26_214_400),
 
   GOOGLE_CLIENT_ID: raw.GOOGLE_CLIENT_ID?.trim() || undefined,
   GOOGLE_CLIENT_SECRET: raw.GOOGLE_CLIENT_SECRET?.trim() || undefined,
-  ANALYTICS_ENCRYPTION_KEY: raw.ANALYTICS_ENCRYPTION_KEY?.trim() || undefined,
+  ANALYTICS_ENCRYPTION_KEY: raw.ANALYTICS_ENCRYPTION_KEY,
 } as const;
 
 export type Env = typeof env;
+
+/**
+ * The cron secret as it stands right now, or `null` if it is unusable.
+ *
+ * Read at call time rather than from the parsed snapshot so a rotation in the
+ * container environment takes effect without a restart, and so the strength
+ * rule applies to the value actually being compared: a weak secret is treated
+ * as no secret at all, which makes the cron endpoint refuse everything — the
+ * loud failure — instead of accepting a published credential.
+ */
+export function cronSecret(): string | null {
+  const value = process.env.CRON_SECRET?.trim();
+  if (!value) return null;
+  if (IS_PRODUCTION && secretProblem(value)) return null;
+  return value;
+}

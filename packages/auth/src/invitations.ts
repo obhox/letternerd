@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import {
   conflict,
   forbidden,
@@ -156,8 +156,9 @@ export async function acceptInvitation(
     // forged one get the same answer.
     if (!invitation) throw notFound("This invitation link is not valid.");
 
-    // Single use. Checked inside the transaction so two simultaneous
-    // redemptions of one link cannot both pass a stale read.
+    // Single use, checked early for a clear message. This read is not what
+    // makes it single use — under READ COMMITTED two concurrent redemptions
+    // can both see `null` here — the conditional UPDATE at the end is.
     if (invitation.acceptedAt) {
       throw conflict("This invitation has already been accepted.");
     }
@@ -191,6 +192,23 @@ export async function acceptInvitation(
       throw forbidden(`An invitation cannot grant the "${invitation.role}" role.`);
     }
 
+    /**
+     * The claim itself: mark the row used only if nobody else has. Two
+     * concurrent redemptions both reach this statement; the row lock makes
+     * the second one wait, and when it runs `accepted_at` is no longer null,
+     * so it updates nothing and is refused. This is what makes a link single
+     * use, and it holds regardless of what the SELECT above saw.
+     */
+    const claimed = await tx
+      .update(schema.siteInvitations)
+      .set({ acceptedAt: new Date() })
+      .where(and(eq(schema.siteInvitations.id, invitation.id), isNull(schema.siteInvitations.acceptedAt)))
+      .returning({ id: schema.siteInvitations.id });
+
+    if (claimed.length === 0) {
+      throw conflict("This invitation has already been accepted.");
+    }
+
     await tx
       .insert(schema.siteMembers)
       .values({ siteId: invitation.siteId, userId, role: invitation.role })
@@ -200,11 +218,6 @@ export async function acceptInvitation(
        * `author` invite must not demote a site's owner.
        */
       .onConflictDoNothing();
-
-    await tx
-      .update(schema.siteInvitations)
-      .set({ acceptedAt: new Date() })
-      .where(eq(schema.siteInvitations.id, invitation.id));
 
     return { siteId: invitation.siteId, role: invitation.role };
   });
