@@ -510,6 +510,17 @@ export interface InsightsDeps {
    * credentials of its own, and everything still works without one.
    */
   provider?: AnalyticsProvider;
+  /**
+   * Resolved per request, from the connection stored for this site.
+   *
+   * The registry is built once at module load, so a fixed `provider` can only
+   * ever be one site's — which is wrong the moment a second site connects its
+   * own Search Console. A resolver defers the lookup to the request that knows
+   * which site is asking. It must return null rather than throw when nothing is
+   * connected, because a missing connection is a reportable state, not an
+   * error: the rules that need no provider still have to run.
+   */
+  resolveProvider?: (siteId: string) => Promise<AnalyticsProvider | null>;
 }
 
 function createListInsights(deps: InsightsDeps): AnyCapability {
@@ -614,7 +625,12 @@ function createListInsights(deps: InsightsDeps): AnyCapability {
 
       /* ---- provider signal, or its documented absence ------------------- */
 
-      const provider = deps.provider;
+      // The resolver reports "nothing connected" as null; the rest of this
+      // handler already branches on undefined, so normalise rather than teach
+      // every downstream check about a second empty value.
+      const provider =
+        deps.provider ??
+        (deps.resolveProvider ? ((await deps.resolveProvider(actor.siteId)) ?? undefined) : undefined);
       const range = rangeOf(now, input.days);
       const previousRange = rangeOf(new Date(now.getTime() - input.days * 86_400_000), input.days);
 

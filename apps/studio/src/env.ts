@@ -73,6 +73,31 @@ const schema = z.object({
   S3_SECRET_ACCESS_KEY: z.string().optional(),
   MEDIA_CDN_URL: z.string().optional(),
   MEDIA_MAX_UPLOAD_BYTES: z.string().optional(),
+
+  /**
+   * Google Search Console, and the key that protects its credentials.
+   *
+   * Optional as a group, and that is a deliberate product decision rather than
+   * laziness. A studio with no Google application configured is a complete,
+   * working studio with three fewer insight rules — the analytics settings
+   * screen says which variables are missing and `list_insights` reports those
+   * rules as skipped rather than as finding nothing. Making these required
+   * would mean every install, including every local checkout, needs a Google
+   * Cloud project before it can boot.
+   *
+   * `ANALYTICS_ENCRYPTION_KEY` is optional *here* and mandatory the moment a
+   * connection is created: `analyticsTokenCipher()` in `@cms/capabilities`
+   * throws rather than falling back to storing tokens in the clear. That split
+   * is intentional — booting without it is fine, storing a Google refresh token
+   * without it is not, and the second failure is the one that must be loud.
+   *
+   * It is not validated for length here. The one place that knows AES-256 needs
+   * exactly 32 bytes is the cipher, and a second opinion in this file would
+   * eventually disagree with it.
+   */
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  ANALYTICS_ENCRYPTION_KEY: z.string().optional(),
 });
 
 const parsed = schema.safeParse(process.env);
@@ -130,6 +155,10 @@ export const env = {
   S3_SECRET_ACCESS_KEY: raw.S3_SECRET_ACCESS_KEY?.trim() || undefined,
   MEDIA_CDN_URL: raw.MEDIA_CDN_URL?.trim() || undefined,
   MEDIA_MAX_UPLOAD_BYTES: Number(raw.MEDIA_MAX_UPLOAD_BYTES ?? 26_214_400),
+
+  GOOGLE_CLIENT_ID: raw.GOOGLE_CLIENT_ID?.trim() || undefined,
+  GOOGLE_CLIENT_SECRET: raw.GOOGLE_CLIENT_SECRET?.trim() || undefined,
+  ANALYTICS_ENCRYPTION_KEY: raw.ANALYTICS_ENCRYPTION_KEY?.trim() || undefined,
 } as const;
 
 export type Env = typeof env;

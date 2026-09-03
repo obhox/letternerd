@@ -19,6 +19,7 @@ const TABS = [
   { segment: "/api-keys", label: "API keys" },
   { segment: "/members", label: "Members" },
   { segment: "/webhooks", label: "Webhooks" },
+  { segment: "/analytics", label: "Analytics" },
 ] as const;
 
 export function SettingsTabs({ siteSlug }: { siteSlug: string }) {

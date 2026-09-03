@@ -13,6 +13,7 @@
 import "./services";
 
 import { createRegistry } from "@cms/core";
+import { connectionsCapabilities } from "./connections";
 import { documentCapabilities } from "./documents";
 import { editorialCapabilities } from "./editorial";
 import { insightsCapabilities } from "./insights";
@@ -29,10 +30,12 @@ export const capabilities = [
   ...settingsCapabilities,
   ...insightsCapabilities,
   ...schedulerCapabilities,
+  ...connectionsCapabilities,
 ];
 
 export const registry = createRegistry(capabilities);
 
+export * from "./connections";
 export * from "./documents";
 export * from "./editorial";
 export * from "./insights";
