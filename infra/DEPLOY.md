@@ -105,7 +105,8 @@ Coolify generates the `SERVICE_*` variables itself:
 | Variable | Meaning |
 |---|---|
 | `SERVICE_FQDN_STUDIO_3000` | wires Traefik to the studio container on :3000 |
-| `SERVICE_FQDN_STUDIO` | the public origin, e.g. `https://cms.example.com` |
+| `SERVICE_FQDN_STUDIO` | the bare assigned domain, e.g. `cms.example.com` — no scheme |
+| `SERVICE_URL_STUDIO` | the public origin, e.g. `https://cms.example.com` — this is what `CMS_STUDIO_URL` needs |
 | `SERVICE_BASE64_64_AUTH` | generated `BETTER_AUTH_SECRET` |
 | `SERVICE_PASSWORD_CRON` | generated `CRON_SECRET` |
 
