@@ -135,11 +135,10 @@ const schema = z.object({
   CMS_REQUIRE_EMAIL_VERIFICATION: z.string().optional(),
 
   /**
-   * Whether anyone may create an account, or only people who arrive through an
-   * invitation and the operator's scripts. Unset means open in development and
-   * closed in production: an open registration form on a public host is an
-   * account-spam and verification-email-spam surface even when no membership
-   * follows from it.
+   * Whether anyone may create an account. Open by default: a new account holds
+   * no membership and can do nothing until an owner invites it, and the
+   * sign-up endpoint is rate limited and, in production, email-verified.
+   * Set to `false` to admit only addresses that hold a live invitation.
    */
   CMS_ALLOW_SIGNUP: z.string().optional(),
 
@@ -266,8 +265,8 @@ export const env = {
   EMAIL_FROM: raw.EMAIL_FROM?.trim() || undefined,
   /** `undefined` means "let `@cms/auth` decide from NODE_ENV". */
   CMS_REQUIRE_EMAIL_VERIFICATION: optionalBoolean(raw.CMS_REQUIRE_EMAIL_VERIFICATION),
-  /** Open in development, closed in production, unless said otherwise. */
-  CMS_ALLOW_SIGNUP: optionalBoolean(raw.CMS_ALLOW_SIGNUP) ?? !IS_PRODUCTION,
+  /** Open unless an operator closes it. */
+  CMS_ALLOW_SIGNUP: optionalBoolean(raw.CMS_ALLOW_SIGNUP) ?? true,
   /** `null` means no role is required to enrol. */
   CMS_REQUIRE_2FA_ROLE: require2faRole,
   CMS_CLIENT_IP_HEADER: raw.CMS_CLIENT_IP_HEADER?.trim().toLowerCase() || "x-forwarded-for",

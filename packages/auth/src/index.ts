@@ -39,10 +39,10 @@ export interface AuthConfig {
   requireEmailVerification?: boolean;
   sendVerificationEmail?: (args: { to: string; url: string }) => Promise<void>;
   /**
-   * Whether `/sign-up/email` accepts strangers. Unset means: open outside
-   * production, closed in it — an open form on a public host is account spam
-   * and verification-email spam even when no membership follows from it. An
-   * address holding a live invitation may always register.
+   * Whether `/sign-up/email` accepts strangers. Open unless the operator says
+   * otherwise: a fresh account holds no membership and can do nothing until
+   * invited, and the endpoint is rate limited and email-verified in
+   * production. An address holding a live invitation may always register.
    */
   allowSignUp?: boolean;
   /**
@@ -109,7 +109,7 @@ export function createAuth(config: AuthConfig) {
   const requireEmailVerification = resolveVerificationPolicy(config);
   const sendVerificationEmail = config.sendVerificationEmail;
 
-  const allowSignUp = config.allowSignUp ?? process.env.NODE_ENV !== "production";
+  const allowSignUp = config.allowSignUp ?? true;
 
   const pool = new pg.Pool({
     connectionString: config.connectionString,

@@ -73,10 +73,10 @@ describe("cronSecret()", () => {
 });
 
 describe("policy defaults", () => {
-  it("opens sign-up in development and closes it in production", async () => {
+  it("keeps sign-up open everywhere unless an operator closes it", async () => {
     expect((await load({})).env.CMS_ALLOW_SIGNUP).toBe(true);
-    expect((await load({}, "production")).env.CMS_ALLOW_SIGNUP).toBe(false);
-    expect((await load({ CMS_ALLOW_SIGNUP: "true" }, "production")).env.CMS_ALLOW_SIGNUP).toBe(true);
+    expect((await load({}, "production")).env.CMS_ALLOW_SIGNUP).toBe(true);
+    expect((await load({ CMS_ALLOW_SIGNUP: "false" }, "production")).env.CMS_ALLOW_SIGNUP).toBe(false);
     expect((await load({ CMS_ALLOW_SIGNUP: "off" })).env.CMS_ALLOW_SIGNUP).toBe(false);
   });
 

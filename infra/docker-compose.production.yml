@@ -87,10 +87,9 @@ services:
       # until it is set — there is no plaintext fallback. openssl rand -hex 32.
       ANALYTICS_ENCRYPTION_KEY: ${ANALYTICS_ENCRYPTION_KEY}
 
-      # Closed unless said otherwise: accounts then come only from invitations
-      # and the operator's scripts. Passed through rather than hardcoded so a
-      # first deploy can open it briefly from the Coolify UI.
-      CMS_ALLOW_SIGNUP: ${CMS_ALLOW_SIGNUP:-false}
+      # true | false. Whether anyone may create an account. Open by default;
+      # set to false to admit only addresses that hold a live invitation.
+      CMS_ALLOW_SIGNUP: ${CMS_ALLOW_SIGNUP:-true}
       # The header the rate limiters read the client address from. Traefik
       # overwrites X-Forwarded-For with the real peer; behind Cloudflare set
       # cf-connecting-ip, or every visitor shares one Cloudflare edge's budget.

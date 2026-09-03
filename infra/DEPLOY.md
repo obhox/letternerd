@@ -97,7 +97,7 @@ both store a secret under it and neither has a plaintext fallback — so set it
 now rather than when the first error names it.
 
 Three more have production defaults and only need setting to change them:
-`CMS_ALLOW_SIGNUP` (`false`), `CMS_CLIENT_IP_HEADER` (`x-forwarded-for`; see
+`CMS_ALLOW_SIGNUP` (`true`; set `false` to admit only invited addresses), `CMS_CLIENT_IP_HEADER` (`x-forwarded-for`; see
 "Reverse-proxy headers") and `CMS_REQUIRE_2FA_ROLE` (`owner`; see "Two-factor
 rollout"). `CMS_RATE_LIMIT` exists for end-to-end suites and should never be
 set here.

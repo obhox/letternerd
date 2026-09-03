@@ -13,8 +13,8 @@ export const metadata: Metadata = { title: "Create an account" };
  * find the invitation again. It is narrowed to a same-origin path here, at the
  * boundary, exactly as on the sign-in page.
  *
- * When registration is closed (`CMS_ALLOW_SIGNUP=false`, the production
- * default) the form is rendered only for someone arriving from an invitation.
+ * When an operator has closed registration (`CMS_ALLOW_SIGNUP=false`) the
+ * form is rendered only for someone arriving from an invitation.
  * The server refuses every other address regardless — the hook in `@cms/auth`
  * is the boundary — but a form that can only fail is a worse answer than a
  * sentence that says why.
