@@ -69,8 +69,8 @@ describe("derived values", () => {
 describe("the snippets carry this site's values", () => {
   it("does not pretend the package is on a registry", () => {
     const snippet = installSnippet();
-    expect(snippet).not.toMatch(/npm i(nstall)? @obhox\/cms-sdk\s*$/m);
-    expect(snippet).toContain("@obhox/cms-sdk@workspace:*");
+    expect(snippet).not.toMatch(/npm i(nstall)? @letternerd\/sdk\s*$/m);
+    expect(snippet).toContain("@letternerd/sdk@workspace:*");
     expect(snippet).toContain("file:../cms/packages/sdk");
   });
 
@@ -109,7 +109,7 @@ describe("the snippets carry this site's values", () => {
     ].join("\n");
 
     const imported = new Set<string>();
-    for (const match of everything.matchAll(/import \{([^}]+)\} from "@obhox\/cms-sdk[^"]*"/g)) {
+    for (const match of everything.matchAll(/import \{([^}]+)\} from "@letternerd\/sdk[^"]*"/g)) {
       for (const name of match[1]!.split(",")) {
         imported.add(name.replace(/^\s*type\s+/, "").trim());
       }
@@ -168,7 +168,7 @@ describe("the snippets carry this site's values", () => {
           ...routeSnippets(VALUES).map((file) => file.code),
         ]
           .join("\n")
-          .matchAll(/import \{([^}]+)\} from "@obhox\/cms-sdk[^"]*"/g),
+          .matchAll(/import \{([^}]+)\} from "@letternerd\/sdk[^"]*"/g),
       ),
     ].flatMap((match) => match[1]!.split(",").map((name) => name.replace(/^\s*type\s+/, "").trim()));
 
@@ -178,7 +178,7 @@ describe("the snippets carry this site's values", () => {
         `export (?:async )?(?:function|const|class|interface|type) ${name}\\b|^\\s{2}${name},$`,
         "m",
       );
-      expect(source, `@obhox/cms-sdk does not export ${name}`).toMatch(declared);
+      expect(source, `@letternerd/sdk does not export ${name}`).toMatch(declared);
     }
   });
 

@@ -17,6 +17,7 @@ import { connectionsCapabilities } from "./connections";
 import { documentCapabilities } from "./documents";
 import { editorialCapabilities } from "./editorial";
 import { insightsCapabilities } from "./insights";
+import { installCapabilities } from "./install";
 import { mediaCapabilities } from "./media";
 import { schedulerCapabilities } from "./scheduler";
 import { settingsCapabilities } from "./settings";
@@ -31,6 +32,7 @@ export const capabilities = [
   ...insightsCapabilities,
   ...schedulerCapabilities,
   ...connectionsCapabilities,
+  ...installCapabilities,
 ];
 
 export const registry = createRegistry(capabilities);
@@ -39,6 +41,7 @@ export * from "./connections";
 export * from "./documents";
 export * from "./editorial";
 export * from "./insights";
+export * from "./install";
 export * from "./media";
 export * from "./scheduler";
 export * from "./settings";

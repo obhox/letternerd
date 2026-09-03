@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "create-account": "tsx --env-file=.env scripts/create-account.ts",
-    "migrate-media": "tsx --env-file=.env scripts/migrate-media.ts"
+    "migrate-media": "tsx --env-file=.env scripts/migrate-media.ts",
+    "seed-demo": "tsx --env-file=.env scripts/seed-demo.ts"
   },
   "dependencies": {
     "@cms/analytics": "workspace:*",
@@ -53,12 +54,17 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/user-event": "^14.5.2",
     "@types/node": "^22.10.5",
     "@types/react": "^19.0.7",
     "@types/react-dom": "^19.0.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^25.0.1",
     "tailwindcss": "^4.0.0",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.3",
-    "vitest": "^3.0.5",
-    "tsx": "^4.19.2"
+    "vitest": "^3.0.5"
   }
 }

@@ -142,7 +142,7 @@ export default async function InstallPage({ params }: { params: Promise<{ site: 
             <strong className="font-semibold text-[var(--color-ink)]">
               This package is not published to a registry.
             </strong>{" "}
-            There is no <Value>npm i @obhox/cms-sdk</Value> that works today. Depend on the checkout
+            There is no <Value>npm i @letternerd/sdk</Value> that works today. Depend on the checkout
             instead — a workspace dependency if your site lives in this monorepo, a{" "}
             <Value>file:</Value> dependency if it does not.
           </StepNote>
