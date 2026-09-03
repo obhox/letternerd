@@ -3,12 +3,12 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { registry } from "@cms/capabilities";
-import { isCmsError, mcpAnnotations, type Actor } from "@cms/core";
+import { isCmsError, mcpAnnotations, rawShapeOf, type Actor } from "@cms/core";
 import { createDb } from "@cms/db";
 import { verifyApiKey } from "@cms/db/api-keys";
 import { actorFromApiKey } from "@cms/auth";
 import { createStorage } from "@cms/media";
-import { rawShapeOf } from "./schema";
+
 
 /**
  * The stdio MCP server.

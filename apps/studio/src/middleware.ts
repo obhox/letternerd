@@ -29,12 +29,15 @@ import { NextResponse, type NextRequest } from "next/server";
  * `/api/v1` is the public content API, which authenticates with an API key and
  * rejects sessions outright. Redirecting an unauthenticated request there to a
  * sign-in page would answer a machine with HTML; it returns its own 401 with a
- * WWW-Authenticate header instead.
+ * WWW-Authenticate header instead. `/api/mcp` is the same argument in the same
+ * words: it is a bearer-token endpoint for MCP clients, and a 307 to a login
+ * page is a connection failure an agent cannot diagnose.
  */
 const PUBLIC_PREFIXES = [
   "/api/auth",
   "/api/health",
   "/api/v1",
+  "/api/mcp",
   "/sign-in",
   "/sign-up",
   "/verify-email",

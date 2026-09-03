@@ -17,6 +17,7 @@ const TABS = [
   { segment: "", label: "General" },
   { segment: "/seo", label: "SEO" },
   { segment: "/api-keys", label: "API keys" },
+  { segment: "/mcp", label: "MCP" },
   { segment: "/members", label: "Members" },
   { segment: "/webhooks", label: "Webhooks" },
   { segment: "/analytics", label: "Analytics" },

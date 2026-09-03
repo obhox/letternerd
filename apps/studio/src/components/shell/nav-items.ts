@@ -46,6 +46,10 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [{ href: "/insights", label: "Insights" }],
   },
   {
+    label: "Connect",
+    items: [{ href: "/install", label: "Install on your site" }],
+  },
+  {
     label: "Configure",
     items: [
       { href: "/redirects", label: "Redirects", needs: can.manageRedirects },
