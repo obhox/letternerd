@@ -24,11 +24,11 @@
   "dependencies": {
     "@cms/core": "workspace:*",
     "drizzle-orm": "^0.45.2",
-    "postgres": "^3.4.5"
+    "postgres": "^3.4.5",
+    "tsx": "^4.19.2"
   },
   "devDependencies": {
     "drizzle-kit": "^0.31.10",
-    "tsx": "^4.19.2",
     "typescript": "^5.7.3",
     "vitest": "^3.0.5"
   }
