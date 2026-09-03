@@ -10,7 +10,8 @@
     "start": "next start --port 3000",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
-    "create-account": "tsx --env-file=.env scripts/create-account.ts"
+    "create-account": "tsx --env-file=.env scripts/create-account.ts",
+    "migrate-media": "tsx --env-file=.env scripts/migrate-media.ts"
   },
   "dependencies": {
     "@cms/analytics": "workspace:*",
