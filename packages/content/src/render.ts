@@ -70,12 +70,53 @@ import type { LintFinding, QaBlock, RenderInput, RenderResult } from "./types";
  */
 type Highlighter = Awaited<ReturnType<typeof createHighlighter>>;
 
+/**
+ * Grammars are loaded up front, never lazily.
+ *
+ * `lazy: true` with an empty `langs` looks like a sensible optimisation and is
+ * a correctness bug: shiki loads a grammar asynchronously, but the rehype
+ * transform that needs it is synchronous. The first fence in a given language
+ * therefore renders UNHIGHLIGHTED and merely schedules the load, and the second
+ * render — of the identical document — comes out different. Rendering happens
+ * once at publish and the result is stored, so in production that meant the
+ * first document published after a process start kept plain-looking code
+ * forever, with nothing to indicate why.
+ *
+ * Loading the set eagerly costs a few hundred milliseconds once per process.
+ * That is paid at publish time, not per request, and buys the guarantee the
+ * whole pipeline rests on: the same markdown always produces the same bytes.
+ *
+ * A fence tagged with a language outside this list falls back to `text`
+ * deterministically, which is the right answer for a typo.
+ */
+const SUPPORTED_LANGUAGES = [
+  "bash",
+  "css",
+  "diff",
+  "go",
+  "html",
+  "java",
+  "javascript",
+  "json",
+  "jsx",
+  "markdown",
+  "php",
+  "python",
+  "ruby",
+  "rust",
+  "shell",
+  "sql",
+  "tsx",
+  "typescript",
+  "yaml",
+] as const;
+
 let highlighterPromise: Promise<Highlighter> | undefined;
 
 function sharedHighlighter(): Promise<Highlighter> {
   highlighterPromise ??= createHighlighter({
     themes: ["github-light", "github-dark"],
-    langs: [],
+    langs: [...SUPPORTED_LANGUAGES],
   });
   return highlighterPromise;
 }
@@ -138,7 +179,9 @@ export async function renderDocument(input: RenderInput): Promise<RenderResult> 
     })
     .use(rehypeShikiFromHighlighter, highlighter, {
       themes: { light: "github-light", dark: "github-dark" },
-      lazy: true,
+      // Every supported grammar is already loaded; see SUPPORTED_LANGUAGES.
+      // Lazy loading here is what made the first render differ from the second.
+      lazy: false,
       defaultLanguage: "text",
       fallbackLanguage: "text",
       // A code fence tagged with a language nobody has heard of is a typo, not
