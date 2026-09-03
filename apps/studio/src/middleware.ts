@@ -32,12 +32,22 @@ import { NextResponse, type NextRequest } from "next/server";
  * WWW-Authenticate header instead. `/api/mcp` is the same argument in the same
  * words: it is a bearer-token endpoint for MCP clients, and a 307 to a login
  * page is a connection failure an agent cannot diagnose.
+ *
+ * `/api/cron` is that argument a third time, with a worse failure mode. Coolify
+ * runs the scheduled tasks as `curl -fsS -H "Authorization: Bearer $CRON_SECRET"`,
+ * and `-f` does not treat a 3xx as an error while curl does not follow one
+ * without `-L` — so a redirect here exits 0. Every scheduled task reports
+ * success, on schedule, forever, while nothing runs and scheduled posts never
+ * publish. The route does its own timing-safe check against CRON_SECRET and
+ * refuses outright when that is unset, so a session cookie was never what
+ * guarded it.
  */
 const PUBLIC_PREFIXES = [
   "/api/auth",
   "/api/health",
   "/api/v1",
   "/api/mcp",
+  "/api/cron",
   "/sign-in",
   "/sign-up",
   "/verify-email",
