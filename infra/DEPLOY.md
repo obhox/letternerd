@@ -16,35 +16,55 @@ Both `latest` and the commit SHA are pushed. Never build on the server — a
 build competing with the running app for RAM on a single-server host is how a
 deploy takes the site down.
 
-### The registry is private
+### Make the packages public
 
-`obhox/letternerd` is a private repository, so its packages are private too and
-ghcr.io refuses anonymous pulls — a bare `docker pull` gets a 403, and in
-Coolify that surfaces as a compose deploy that fails on `pull_policy: always`
-before any container starts.
+A package inherits its repository's visibility, and this one was built while the
+repository was private, so both packages are private today — an anonymous
+manifest request returns 403. Coolify surfaces that as a compose deploy failing
+on `pull_policy: always` before any container starts, which reads as a broken
+deploy rather than a permissions setting.
 
-The server therefore needs credentials once:
+Flip both to public once, in their GitHub package settings. Nothing in the
+compose file or the workflow refers to visibility, so there is no code change
+and no re-push; the tags already pushed simply become pullable.
+
+Public is the right setting for an open-source platform: nothing in a published
+image is a secret the source does not already give away, and every secret the
+studio actually needs is injected at runtime from Coolify's env store, never
+baked into a layer.
+
+A fork that stays private keeps hitting the 403 above, and its fix is one
+`docker login` per server with a token scoped to `read:packages` and nothing
+else:
 
 ```bash
-echo "$GHCR_TOKEN" | docker login ghcr.io -u obhox --password-stdin
+echo "$GHCR_TOKEN" | docker login ghcr.io -u <owner> --password-stdin
 ```
 
-`GHCR_TOKEN` is a GitHub personal access token with **`read:packages`** and
-nothing else — it only ever pulls. Coolify's own Docker daemon reads
-`~/.docker/config.json`, so this is a one-time step per server rather than
-anything the compose file knows about.
-
-The alternative is making just the two packages public while the source stays
-private, which GitHub allows per-package. That removes the login step, at the
-cost of anyone being able to pull and inspect the built image. For a product
-that is deliberately not open source, the token is the better trade.
+Coolify's Docker daemon reads `~/.docker/config.json`, so that is a one-time
+server step rather than anything the compose file knows about.
 
 ## 2. Create the project and database
 
-1. New Coolify project named `cms`.
+1. New Coolify project named `letternerd-cms`.
 2. Add a **PostgreSQL 17** database resource inside it. Turn on scheduled
    backups now, not later.
-3. Copy its **internal** connection string — that becomes `DATABASE_URL`.
+3. Copy its **internal** connection string — that becomes `DATABASE_URL`. The
+   host is the database's own uuid, not `postgres` or `localhost`.
+
+### Turn on "Connect to Predefined Network"
+
+This one is not optional and it is not obvious. Coolify puts a Docker Compose
+resource on a private network named after the application's uuid, while a
+Coolify-*managed* database sits on the shared `coolify` network. Left alone the
+studio cannot resolve the database host at all, and the failure looks like a
+migration hanging rather than a networking problem.
+
+The setting lives on the compose resource. With it on, the parser attaches the
+destination's `coolify` network to every service in addition to the per-app one,
+and the internal connection string resolves. The reverse proxy is unaffected
+either way — it joins each app network itself, which is why routing works before
+the database does.
 
 ## 3. Add the compose resource
 
