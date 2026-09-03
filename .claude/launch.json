@@ -4,11 +4,9 @@
     {
       "name": "dev",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": [
-        "run",
-        "dev"
-      ],
-      "port": 3000
+      "runtimeArgs": ["--filter", "@cms/studio", "dev"],
+      "port": 3000,
+      "autoPort": false
     }
   ]
 }
