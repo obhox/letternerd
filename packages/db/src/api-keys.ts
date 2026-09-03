@@ -19,6 +19,9 @@ import * as schema from "./schema/index";
  * API request would only make the endpoint easy to exhaust.
  */
 
+/** How stale `last_used_at` may be before a request refreshes it. */
+const LAST_USED_RESOLUTION_MS = 60_000;
+
 const PREFIXES: Record<ApiKeyType, string> = {
   publishable: "cms_pk_",
   read: "cms_sk_",
@@ -111,13 +114,21 @@ export async function verifyApiKey(
 
   if (!row) return null;
 
-  // Fire-and-forget: last-used tracking must not add latency to, or fail, the
-  // request being authenticated.
-  void db
-    .update(schema.apiKeys)
-    .set({ lastUsedAt: new Date() })
-    .where(eq(schema.apiKeys.id, row.id))
-    .catch(() => {});
+  /**
+   * Fire-and-forget, and at most once a minute per key: last-used tracking
+   * must not add latency to, or fail, the request being authenticated — and a
+   * consuming site's ISR revalidation fans out to hundreds of reads a minute,
+   * each of which would otherwise be a row write for a timestamp nobody reads
+   * to the second.
+   */
+  const now = new Date();
+  if (!row.lastUsedAt || now.getTime() - row.lastUsedAt.getTime() > LAST_USED_RESOLUTION_MS) {
+    void db
+      .update(schema.apiKeys)
+      .set({ lastUsedAt: now })
+      .where(eq(schema.apiKeys.id, row.id))
+      .catch(() => {});
+  }
 
   return {
     id: row.id,
@@ -139,10 +150,24 @@ export async function verifyApiKey(
  * to reach a browser. A secret or admin key arriving with an `Origin` header
  * at all is a sign it has leaked into client code, and the CORS layer refuses
  * it outright rather than quietly allowing the request.
+ *
+ * An empty allow-list is a refusal, not a wildcard. `create_api_key` fills the
+ * list with the site's own origins when none are given, so the only way to
+ * hold a publishable key with no origins is a row written before that rule —
+ * and those are exactly the keys that were usable from any page on the
+ * internet, which is what this closes.
  */
 export function originAllowed(key: VerifiedKey, origin: string | null): boolean {
   if (key.type !== "publishable") return false;
-  if (key.allowedOrigins.length === 0) return true;
   if (!origin) return false;
-  return key.allowedOrigins.includes(origin);
+  return key.allowedOrigins.some((allowed) => sameOrigin(allowed, origin));
+}
+
+function sameOrigin(allowed: string, origin: string): boolean {
+  if (allowed === origin) return true;
+  try {
+    return new URL(allowed).origin === new URL(origin).origin;
+  } catch {
+    return false;
+  }
 }

@@ -41,12 +41,21 @@ export function normalizeBaseUrl(baseUrl: string): string {
 /**
  * A root-relative path resolved against the consuming site's origin.
  *
- * An input that is already absolute is returned untouched: callers pass
- * user-supplied image and profile URLs through here, and those legitimately
- * point at a CDN or at LinkedIn.
+ * An input that is already an `http:` or `https:` URL is returned untouched:
+ * callers pass user-supplied image and profile URLs through here, and those
+ * legitimately point at a CDN or at LinkedIn. Those two schemes are the only
+ * ones that count as absolute. Everything this function produces is written
+ * into a `<loc>`, an `href`, a JSON-LD `url` or a `Sitemap:` line, and a
+ * `javascript:` or `data:` URL has no business in any of them — yet an avatar
+ * or logo URL is a settings field, and a settings field is where such a value
+ * would arrive. Rather than trusting the scheme prefix, anything that is not
+ * a web URL (a protocol-relative `//host` included) is treated as a path under
+ * the site's own origin: the harmless outcome, a 404 here instead of a script
+ * URL there. `mailto:` is not carved out because no caller needs it; if one
+ * ever does, the exception belongs here, not at the call site.
  */
 export function absoluteUrl(site: SeoSite, path: string): string {
-  if (/^[a-z][a-z0-9+.-]*:/i.test(path)) return path;
+  if (/^https?:\/\//i.test(path)) return path;
 
   const origin = normalizeBaseUrl(site.baseUrl);
   const resolved = joinPath(path);
@@ -79,7 +88,12 @@ export type CanonicalTarget = Pick<SeoDocument, "slug" | "canonicalUrlOverride">
 export function canonicalUrlFor(site: SeoSite, doc: CanonicalTarget): string {
   const override = doc.canonicalUrlOverride?.trim();
   if (override) {
-    return override.startsWith("/") ? absoluteUrl(site, override) : override;
+    // Verbatim only for a real web URL, resolved here only for a root-relative
+    // path. Anything else — a scheme like `javascript:` that `.url()` lets
+    // through — is not a canonical; it is ignored and the document's own URL
+    // stands, which is the answer a consumer can render without thinking.
+    if (/^https?:\/\//i.test(override)) return override;
+    if (override.startsWith("/")) return absoluteUrl(site, override);
   }
   return documentUrl(site, doc);
 }

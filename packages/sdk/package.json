@@ -1,7 +1,7 @@
 {
   "name": "@letternerd/sdk",
   "license": "MIT",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Typed client for rendering Letternerd CMS content on your own domain.",
   "main": "./dist/index.js",

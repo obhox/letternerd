@@ -1,12 +1,13 @@
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
-import { registry } from "@cms/capabilities";
+import { invokeAudited, registry } from "@cms/capabilities";
 import { HTTP_STATUS, isCmsError, type Actor } from "@cms/core";
-import type { SiteRole } from "@cms/core/roles";
+import { atLeast, type SiteRole } from "@cms/core/roles";
 import { listMemberships, requireSite } from "@cms/auth";
 import * as schema from "@cms/db/schema";
+import { env } from "@/env";
 import { getSession } from "@/lib/auth";
-import { db, storage, now } from "./services";
+import { db, storage, now, limits } from "./services";
 
 /**
  * The bridge between the studio and the capability layer.
@@ -33,8 +34,21 @@ export interface StudioContext {
  * `activeSiteId` for convenience, but trusting it would mean a stale cookie
  * outlives a revoked membership.
  */
-export async function studioContext(siteSlug: string): Promise<StudioContext> {
-  const session = await getSession(await headers());
+export interface StudioContextOptions {
+  /**
+   * Let a member whose role requires a second factor through without one.
+   * Only the security settings page — the place enrolment happens — passes
+   * this; every other screen and every server action gets the gate.
+   */
+  allowUnenrolled?: boolean;
+}
+
+export async function studioContext(
+  siteSlug: string,
+  options: StudioContextOptions = {},
+): Promise<StudioContext> {
+  const requestHeaders = await headers();
+  const session = await getSession(requestHeaders);
   if (!session?.user) redirect(`/sign-in?redirect=/${siteSlug}`);
 
   try {
@@ -43,6 +57,26 @@ export async function studioContext(siteSlug: string): Promise<StudioContext> {
       session: { userId: session.user.id },
       site: siteSlug,
     });
+
+    /**
+     * The second-factor requirement, enforced where authorization is.
+     *
+     * A role that can publish to a live site or mint API keys is a role a
+     * phished password must not be enough for. The check sits here rather
+     * than in a layout because layouts guard navigations and this guards
+     * server actions too: a browser that skips the redirect and posts an
+     * action directly meets the same refusal.
+     */
+    const requiredRole = env.CMS_REQUIRE_2FA_ROLE;
+    const enrolled = Boolean((session.user as { twoFactorEnabled?: boolean }).twoFactorEnabled);
+    const securityPath = `/${site.slug}/settings/security`;
+    // Trustworthy only because `src/proxy.ts` overwrites this header on every
+    // branch, API routes included; a value the client sent never survives it.
+    const onSecurityPage = requestHeaders.get("x-pathname") === securityPath;
+    if (requiredRole && atLeast(role, requiredRole) && !enrolled && !options.allowUnenrolled && !onSecurityPage) {
+      redirect(`${securityPath}?required=1`);
+    }
+
     return { actor, site, role, userId: session.user.id };
   } catch (error) {
     // A site the user cannot see is answered as missing, never as forbidden —
@@ -98,27 +132,17 @@ export async function dispatch<T = unknown>(
   }
 
   try {
-    const data = (await cap.invoke(input, {
+    /**
+     * `invokeAudited` writes the audit row for every non-read-only success,
+     * with the transport named — the same wrapper REST and MCP use, so a
+     * change made by a person and a change made by an agent leave the same
+     * kind of trail.
+     */
+    const data = await invokeAudited<T>(cap, input, {
       actor: ctx.actor,
-      services: { db, storage, now },
-    })) as T;
-
-    if (!cap.readOnly) {
-      // Agents and people both write through here, so the trail records which.
-      await db
-        .insert(schema.auditLog)
-        .values({
-          siteId: ctx.actor.siteId,
-          actorType: ctx.actor.kind,
-          actorId: ctx.actor.id,
-          capability: cap.name,
-          transport: "studio",
-          input: redact(input),
-        })
-        .catch(() => {
-          // Never fail a successful write because its audit row did not land.
-        });
-    }
+      services: { db, storage, now, limits },
+      transport: "studio",
+    });
 
     return { ok: true, data };
   } catch (error) {
@@ -133,22 +157,6 @@ export async function dispatch<T = unknown>(
     }
     throw error;
   }
-}
-
-/** Capability inputs can carry a whole document body; the log wants none of it. */
-function redact(input: unknown): Record<string, unknown> {
-  if (typeof input !== "object" || input === null) return {};
-  const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(input as Record<string, unknown>)) {
-    if (typeof v === "string" && v.length > 200) {
-      out[k] = `<${v.length} chars omitted>`;
-    } else if (/token|secret|password|key/i.test(k)) {
-      out[k] = "<redacted>";
-    } else {
-      out[k] = v;
-    }
-  }
-  return out;
 }
 
 /** Throw-on-failure variant, for server components where a failure is a bug. */

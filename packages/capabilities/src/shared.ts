@@ -1,4 +1,5 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
+import type { AnyPgColumn, AnyPgTable } from "drizzle-orm/pg-core";
 import { notFound, invalidInput } from "@cms/core";
 import type { Database } from "@cms/db";
 import * as schema from "@cms/db/schema";
@@ -54,4 +55,34 @@ export function decodeCursor(raw: string): Cursor {
     // returning page one would look like "no more data" and truncate an export.
     throw invalidInput("Malformed pagination cursor.");
   }
+}
+
+/**
+ * A referenced row must belong to this site.
+ *
+ * Any capability input that names another row by id — an author for a byline,
+ * a folder for an upload, an asset for an avatar — is a place where a caller
+ * on one site can point at a row on another. The foreign key alone does not
+ * stop that; only a predicate on `site_id` does. The miss is answered as
+ * `not_found`, the same as a typo, because distinguishing the two would tell
+ * the caller which ids exist elsewhere. `tag_document` established the rule;
+ * this is it, once, for everything else.
+ */
+/** A database or a transaction: anything that can run a SELECT. */
+type Queryable = Pick<Database, "select">;
+
+export async function requireSiteOwnedRow(
+  db: Queryable,
+  table: AnyPgTable,
+  columns: { id: AnyPgColumn; siteId: AnyPgColumn },
+  id: string,
+  siteId: string,
+  what: string,
+): Promise<void> {
+  const [row] = await db
+    .select({ id: columns.id })
+    .from(table)
+    .where(and(eq(columns.siteId, siteId), eq(columns.id, id)))
+    .limit(1);
+  if (!row) throw notFound(`${what} not found.`);
 }

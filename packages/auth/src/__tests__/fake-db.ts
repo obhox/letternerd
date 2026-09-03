@@ -37,6 +37,8 @@ export interface CannedRows {
 
 export interface FakeDb {
   db: Database;
+  /** How many rows the next UPDATEs report matching. Defaults to 1. */
+  setUpdateMatches(n: number): void;
   inserts: { table: string; values: any }[];
   updates: { table: string; set: any; where: unknown }[];
   /** Number of `db.transaction(...)` calls entered. */
@@ -51,6 +53,7 @@ export function createFakeDb(rows: CannedRows = {}): FakeDb {
   const conditions: unknown[] = [];
   let transactions = 0;
   let nextId = 1;
+  let updateMatches = 1;
 
   const canned = (name: string): unknown[] => (rows as Record<string, unknown[]>)[name] ?? [];
 
@@ -95,7 +98,10 @@ export function createFakeDb(rows: CannedRows = {}): FakeDb {
           return {
             where(where: unknown) {
               updates.push({ table: name, set, where });
-              return thenable([]);
+              // One matching row, as a real UPDATE ... RETURNING would report
+              // for the canned data these tests arrange. A test that wants
+              // the zero-rows path sets `updateMatches` to 0 first.
+              return thenable(updateMatches > 0 ? [{ id: `${name}_updated`, ...set }] : []);
             },
           };
         },
@@ -109,6 +115,9 @@ export function createFakeDb(rows: CannedRows = {}): FakeDb {
 
   return {
     db: db as Database,
+    setUpdateMatches: (n: number) => {
+      updateMatches = n;
+    },
     inserts,
     updates,
     conditions,

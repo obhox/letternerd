@@ -1,3 +1,5 @@
+import { assertSecureOrigin } from "../transport-guard";
+import { assertSafeRelativePath } from "./safe-path";
 import { buildInstallPlan } from "./snippets";
 import type { InstallPlan, InstallValues, PackageManager } from "./snippets";
 
@@ -107,6 +109,9 @@ export interface FetchPlanOptions {
  * and the caller says what to do about it.
  */
 export async function fetchPlan(options: FetchPlanOptions): Promise<ResolvedPlan> {
+  // Before the URL is even built: the key goes in the next request's headers.
+  assertSecureOrigin(options.studioOrigin, "--studio-url");
+
   const doFetch = options.fetchImpl ?? fetch;
   const url = new URL(`${trimSlash(options.studioOrigin)}/api/v1/site/install-plan`);
   url.searchParams.set("framework", "next-app-router");
@@ -134,9 +139,86 @@ export async function fetchPlan(options: FetchPlanOptions): Promise<ResolvedPlan
     );
   }
 
-  const plan = (await response.json()) as InstallPlan;
-  if (!Array.isArray(plan.files) || plan.files.length === 0) {
-    throw new Error(`${url.origin} returned no files in its install plan.`);
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    throw new Error(`${url.origin} returned a non-JSON body for the install plan.`);
   }
-  return { plan, source: "studio" };
+
+  return { plan: validateInstallPlan(payload, url.origin), source: "studio" };
+}
+
+/**
+ * Bounds on what a plan may ask the CLI to write.
+ *
+ * These are generous next to the nine small files a real plan contains and
+ * tight next to what a hostile one could send: fifty files of a quarter
+ * megabyte is an install, while ten thousand files of ten megabytes is a disk.
+ */
+const MAX_FILES = 50;
+const MAX_PATH_LENGTH = 512;
+const MAX_CONTENTS_LENGTH = 262_144;
+const MAX_PURPOSE_LENGTH = 500;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * The plan as the studio sent it, or an error that names the studio.
+ *
+ * `response.json()` returns whatever the server felt like sending, and the
+ * cast that used to stand here turned that into an `InstallPlan` by assertion
+ * alone. Everything `applyPlan` writes comes from `files`, so that is what is
+ * checked field by field: the shape, the sizes, and — through the same rule
+ * `applyPlan` enforces again before writing — that no path can leave the
+ * project. A hand-rolled check rather than a schema library, because this
+ * package ships to consuming sites and takes no runtime dependencies for it.
+ *
+ * Rejecting throws rather than dropping the bad entry. A plan with one hostile
+ * path is not a plan with one fewer file; it is evidence that the thing on the
+ * other end of the URL is not the studio, and nothing it sent should be used.
+ */
+export function validateInstallPlan(payload: unknown, origin: string): InstallPlan {
+  const invalid = (what: string): Error =>
+    new Error(`${origin} returned an install plan this command will not apply: ${what}.`);
+
+  if (!isRecord(payload)) throw invalid("the body is not a JSON object");
+
+  const files = payload.files;
+  if (!Array.isArray(files)) throw invalid("`files` is not an array");
+  if (files.length === 0) throw invalid("it lists no files");
+  if (files.length > MAX_FILES) {
+    throw invalid(`it lists ${files.length} files; the limit is ${MAX_FILES}`);
+  }
+
+  files.forEach((file: unknown, index: number) => {
+    const at = `files[${index}]`;
+    if (!isRecord(file)) throw invalid(`${at} is not an object`);
+
+    const { path, contents, purpose } = file;
+    if (typeof path !== "string" || path.length === 0) {
+      throw invalid(`${at}.path is not a non-empty string`);
+    }
+    if (path.length > MAX_PATH_LENGTH) {
+      throw invalid(`${at}.path is longer than ${MAX_PATH_LENGTH} characters`);
+    }
+    if (typeof contents !== "string") throw invalid(`${at}.contents is not a string`);
+    if (contents.length > MAX_CONTENTS_LENGTH) {
+      throw invalid(`${at}.contents is longer than ${MAX_CONTENTS_LENGTH} characters`);
+    }
+    if (typeof purpose !== "string") throw invalid(`${at}.purpose is not a string`);
+    if (purpose.length > MAX_PURPOSE_LENGTH) {
+      throw invalid(`${at}.purpose is longer than ${MAX_PURPOSE_LENGTH} characters`);
+    }
+
+    try {
+      assertSafeRelativePath(path);
+    } catch (error) {
+      throw invalid(`${at}.path is unsafe — ${(error as Error).message}`);
+    }
+  });
+
+  return payload as unknown as InstallPlan;
 }

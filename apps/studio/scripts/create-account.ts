@@ -4,6 +4,18 @@ import * as schema from "@cms/db/schema";
 import { auth } from "../src/lib/auth";
 
 /**
+ * Never against production. Both the default credentials below and the demo
+ * content exist so a laptop has something to click on; on a public host they
+ * are a published password. `--i-know-this-is-production` is the override for
+ * an operator who has read this and means it.
+ */
+if (process.env.NODE_ENV === "production" && !process.argv.includes("--i-know-this-is-production")) {
+  console.error(`[${process.argv[1]?.split("/").pop()}] refusing to run with NODE_ENV=production.`);
+  process.exit(1);
+}
+
+
+/**
  * Create a studio account that can actually sign in, and put it on a site.
  *
  * Deliberately goes through better-auth's own sign-up rather than inserting a

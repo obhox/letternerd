@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 
 import { invalidInput } from "@cms/core";
 import { encode as encodeBlurhash } from "blurhash";
-import sharp, { type Metadata as SharpMetadata } from "sharp";
+import sharp, { type Metadata as SharpMetadata, type SharpOptions } from "sharp";
 
 import { IMMUTABLE_CACHE_CONTROL, originalKey, variantKey } from "./keys";
 import type { StorageService } from "./storage";
@@ -22,6 +22,35 @@ export const VARIANT_WIDTHS = [320, 640, 960, 1280, 1920] as const;
  * takes to exhaust a worker decoding it. The caller may lower it per plan.
  */
 const DEFAULT_MAX_BYTES = 25 * 1024 * 1024;
+
+/**
+ * 50 megapixels. The byte limit above does not bound decoding cost: a PNG of
+ * one colour compresses to a few kilobytes per hundred megapixels, and the
+ * decoder allocates the full raster regardless — three or four bytes per
+ * pixel, per worker, for as long as the request takes. Fifty megapixels is
+ * above any camera an author is likely to own and still under 200 MB of
+ * raster, which a worker survives. Unlike the byte limit this one is a
+ * ceiling a caller may lower but never raise, because it protects the
+ * process rather than the plan.
+ */
+export const MAX_INPUT_PIXELS = 50_000_000;
+
+/**
+ * Every decoder in this file is constructed with these.
+ *
+ * `limitInputPixels` makes libvips refuse a raster over the ceiling before it
+ * allocates one, so the check in `processUpload` is not the only line of
+ * defence — a variant or a blurhash is decoded from the normalised original,
+ * which is already bounded, but nothing here should depend on that ordering.
+ * `failOn: "warning"` refuses a file libvips only partly understands; an
+ * upload that trips a decoder warning is either corrupt or crafted, and in
+ * neither case is "best effort" the right answer for something that will be
+ * served from the CDN origin.
+ */
+const DECODER_OPTIONS = {
+  failOn: "warning",
+  limitInputPixels: MAX_INPUT_PIXELS,
+} as const satisfies SharpOptions;
 
 /** AVIF earns its keep at low quality; 50 is roughly WebP 75 to the eye at a third the bytes. */
 const AVIF_QUALITY = 50;
@@ -111,6 +140,8 @@ export interface ProcessUploadInput {
   filename?: string;
   storage: StorageService;
   maxBytes?: number;
+  /** A lower pixel ceiling than `MAX_INPUT_PIXELS`. A higher one is ignored. */
+  maxPixels?: number;
 }
 
 /**
@@ -137,6 +168,7 @@ export function checksumOf(buffer: Buffer): string {
 export async function processUpload(input: ProcessUploadInput): Promise<ProcessedUpload> {
   const { buffer, siteId, assetId, storage } = input;
   const maxBytes = input.maxBytes ?? DEFAULT_MAX_BYTES;
+  const maxPixels = Math.min(input.maxPixels ?? MAX_INPUT_PIXELS, MAX_INPUT_PIXELS);
 
   const checksumSha256 = checksumOf(buffer);
 
@@ -165,6 +197,17 @@ export async function processUpload(input: ProcessUploadInput): Promise<Processe
 
   if (!metadata.width || !metadata.height) {
     throw invalidInput("Image has no readable dimensions.", { detectedFormat: format });
+  }
+
+  // Before `normalise` decodes anything: the header has told us the raster
+  // size, and a decompression bomb is rejected on that alone, the same way an
+  // oversized upload is rejected on its byte length.
+  const pixels = metadata.width * metadata.height;
+  if (pixels > maxPixels) {
+    throw invalidInput(
+      `Image is ${metadata.width}x${metadata.height} (${pixels} pixels), which exceeds the ${maxPixels} pixel limit.`,
+      { width: metadata.width, height: metadata.height, pixels, maxPixels },
+    );
   }
 
   // EXIF orientation is applied rather than preserved (see `normalise`), so for
@@ -223,8 +266,19 @@ export async function processUpload(input: ProcessUploadInput): Promise<Processe
 
 async function readMetadata(buffer: Buffer): Promise<SharpMetadata> {
   try {
-    return await sharp(buffer, { failOn: "error" }).metadata();
-  } catch {
+    return await sharp(buffer, DECODER_OPTIONS).metadata();
+  } catch (error) {
+    // sharp applies `limitInputPixels` while reading the header, so a raster
+    // over `MAX_INPUT_PIXELS` is refused here, before its dimensions ever
+    // reach the check in `processUpload` (which still owns the per-caller
+    // ceiling). That rejection must not fall into the "not an image" bucket
+    // below: the editor needs to hear "too large", not "unreadable", to know
+    // what to do about it.
+    if (error instanceof Error && /pixel limit/i.test(error.message)) {
+      throw invalidInput(`Image exceeds the ${MAX_INPUT_PIXELS} pixel limit.`, {
+        maxPixels: MAX_INPUT_PIXELS,
+      });
+    }
     // sharp's own message names libvips loaders, which is noise to an editor
     // who dragged a PDF into the media library.
     throw invalidInput("Unsupported upload: the file could not be decoded as an image.");
@@ -250,7 +304,7 @@ async function normalise(
   buffer: Buffer,
   format: "jpeg" | "png" | "webp" | "avif",
 ): Promise<Buffer> {
-  const pipeline = sharp(buffer, { failOn: "error" }).rotate();
+  const pipeline = sharp(buffer, DECODER_OPTIONS).rotate();
   switch (format) {
     case "jpeg":
       return pipeline.jpeg({ quality: ORIGINAL_QUALITY, mozjpeg: true }).toBuffer();
@@ -306,7 +360,7 @@ interface RenderedVariant {
 async function renderVariant(source: Buffer, spec: VariantSpec): Promise<RenderedVariant> {
   // `withoutEnlargement` is belt-and-braces against a rounding disagreement
   // between the width we computed and the one libvips sees.
-  const pipeline = sharp(source, { failOn: "error" }).resize({
+  const pipeline = sharp(source, DECODER_OPTIONS).resize({
     width: spec.width,
     withoutEnlargement: true,
   });
@@ -334,7 +388,7 @@ async function computeBlurhash(source: Buffer): Promise<string | null> {
   try {
     // `ensureAlpha` because the encoder wants four channels per pixel and a
     // JPEG source has three; `raw` because it wants pixels, not a container.
-    const { data, info } = await sharp(source)
+    const { data, info } = await sharp(source, DECODER_OPTIONS)
       .resize(BLURHASH_SIZE, BLURHASH_SIZE, { fit: "inside" })
       .ensureAlpha()
       .raw()
@@ -355,7 +409,7 @@ async function computeBlurhash(source: Buffer): Promise<string | null> {
 /** Used as the placeholder background and as the theme colour on a media detail page. */
 async function computeDominantColor(source: Buffer): Promise<string | null> {
   try {
-    const { dominant } = await sharp(source).stats();
+    const { dominant } = await sharp(source, DECODER_OPTIONS).stats();
     return `#${hex(dominant.r)}${hex(dominant.g)}${hex(dominant.b)}`;
   } catch {
     return null;

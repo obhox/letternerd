@@ -11,7 +11,7 @@ import {
 import { contentHash, hasBlockingFindings, PIPELINE_VERSION } from "@cms/content";
 import * as schema from "@cms/db/schema";
 import { renderForSite } from "./render";
-import { requireSiteRow, cdnUrlFactory, encodeCursor, decodeCursor } from "./shared";
+import { requireSiteRow, cdnUrlFactory, encodeCursor, decodeCursor, requireSiteOwnedRow } from "./shared";
 
 /**
  * Document capabilities.
@@ -226,6 +226,17 @@ export const createDocument = defineCapability({
   role: "author",
   route: { method: "POST", path: "/documents" },
   handler: async (input, { actor, services }) => {
+    if (input.primaryAuthorId) {
+      await requireSiteOwnedRow(
+        services.db,
+        schema.authors,
+        { id: schema.authors.id, siteId: schema.authors.siteId },
+        input.primaryAuthorId,
+        actor.siteId,
+        "Author",
+      );
+    }
+
     const [row] = await services.db
       .insert(schema.documents)
       .values({
@@ -264,7 +275,14 @@ export const updateDocument = defineCapability({
     bodyMd: z.string().optional(),
     primaryAuthorId: z.string().uuid().nullable().optional(),
     noindex: z.boolean().optional(),
-    canonicalUrlOverride: z.string().url().nullable().optional(),
+    canonicalUrlOverride: z
+      .string()
+      .url()
+      // `.url()` accepts any scheme; a canonical of `javascript:` is not a
+      // syndication source, it is a payload for whichever consumer renders it.
+      .refine((u) => /^https?:\/\//i.test(u), "A canonical URL must be http or https.")
+      .nullable()
+      .optional(),
     note: z.string().max(500).optional(),
   }),
   scopes: ["content:write"],
@@ -280,6 +298,17 @@ export const updateDocument = defineCapability({
 
       if (!doc) throw notFound("Document not found.");
       assertCanWriteDocument(actor, doc);
+
+      if (input.primaryAuthorId) {
+        await requireSiteOwnedRow(
+          tx,
+          schema.authors,
+          { id: schema.authors.id, siteId: schema.authors.siteId },
+          input.primaryAuthorId,
+          actor.siteId,
+          "Author",
+        );
+      }
 
       // A revision before the change, not after: what you want when restoring
       // is the state you are about to lose.

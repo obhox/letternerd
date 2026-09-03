@@ -34,6 +34,17 @@ function unrestrictClassNames(attributes: Attributes): Attributes {
 
 const BASE_ATTRIBUTES = unrestrictClassNames(defaultSchema.attributes ?? {});
 
+/**
+ * `name` is a second, unprefixed handle for DOM clobbering — `<a name=location>`
+ * reaches `window.location` exactly as an id does, and `<img name=forms>` also
+ * lands on `document.forms`. Nothing in this pipeline emits it: anchors are
+ * ids, and a `name` never arrives from markdown because raw HTML is off. So it
+ * is removed from the wildcard list rather than policed.
+ */
+const WILDCARD_ATTRIBUTES = (BASE_ATTRIBUTES["*"] ?? []).filter(
+  (definition) => definition !== "name",
+);
+
 const OUR_DATA_ATTRIBUTES = [
   "data-provider",
   "data-embed-id",
@@ -58,7 +69,7 @@ export const contentSanitizeSchema: Schema = {
   attributes: {
     ...BASE_ATTRIBUTES,
     "*": [
-      ...(BASE_ATTRIBUTES["*"] ?? []),
+      ...WILDCARD_ATTRIBUTES,
       // Class names are the API. `.cms-tldr` and `.cms-takeaways` are what the
       // Speakable JSON-LD selects on, and the consuming site styles everything
       // else through them, so an unrestricted allow-list here is intentional:
@@ -88,7 +99,16 @@ export const contentSanitizeSchema: Schema = {
     code: [...(BASE_ATTRIBUTES["code"] ?? []), "style"],
     span: [...(BASE_ATTRIBUTES["span"] ?? []), "style"],
     a: [...(BASE_ATTRIBUTES["a"] ?? []), "href", "rel", "tabIndex"],
-    button: ["type"],
+    // The embed facade is the only thing that emits a button, and it is always
+    // `type="button"`. A `submit` or `reset` button — or one with no type,
+    // which defaults to submit — would act on whatever form the consuming
+    // page happens to wrap the article in.
+    button: [["type", "button"]],
+  },
+
+  required: {
+    ...defaultSchema.required,
+    button: { type: "button" },
   },
 
   /**
@@ -98,10 +118,11 @@ export const contentSanitizeSchema: Schema = {
    * author-controlled ids from clobbering DOM properties. That protection is
    * real, but it is incompatible with the entire point of this package: an
    * anchor an answer engine cited has to be the string that appears in the
-   * HTML. The exposure it gives up is narrow — a heading called "location" can
-   * shadow `document.location` for scripts on the consuming page that read
-   * globals by name — and it is the same trade every static site generator
-   * makes for the same reason.
+   * HTML. The exposure it gives up — a heading called "location" shadowing
+   * `document.location` for scripts on the consuming page that read globals by
+   * name — is closed instead by `rehypeClobberGuard`, which runs immediately
+   * before this schema and suffixes or strips the ids that would clobber,
+   * leaving every other id exactly as written.
    */
   clobberPrefix: "",
 };

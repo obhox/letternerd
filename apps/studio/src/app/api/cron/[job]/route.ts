@@ -1,7 +1,11 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { registry } from "@cms/capabilities";
-import { HTTP_STATUS, isCmsError, systemActor } from "@cms/core";
+import { HTTP_STATUS, createLogger, isCmsError, systemActor } from "@cms/core";
+
+const log = createLogger("cron");
+import { cronSecret } from "@/env";
 import { db, storage, now } from "@/server/services";
+import { RULES, clientIp, rateLimit, rateLimitedResponse } from "@/server/rate-limit";
 
 /**
  * The scheduled-task entry points.
@@ -61,12 +65,15 @@ function isJobName(value: string): value is JobName {
  * - Failure is answered with a bare 401. Which of "no header", "wrong scheme"
  *   and "wrong secret" applies is information for an attacker only.
  *
- * `CRON_SECRET` is read from `process.env` rather than `@/env` deliberately:
- * the studio must still boot without it — serving pages, letting people write
- * — and lose only its scheduled jobs, which this route then says plainly.
+ * `cronSecret()` reads the value at call time and applies the production
+ * strength rule: a placeholder or a short secret is treated as no secret at
+ * all, so the endpoint refuses everything rather than accepting a credential
+ * that has been published in `.env.example`. The studio still boots without
+ * one — serving pages, letting people write — and loses only its scheduled
+ * jobs, which this route then says plainly.
  */
 function authorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET?.trim();
+  const secret = cronSecret();
   if (!secret) return false;
 
   const header = request.headers.get("authorization");
@@ -156,7 +163,7 @@ async function runPublishScheduled(startedAt: number): Promise<Response> {
       ? { error: error.code, message: error.message, ...error.details }
       : { error: "internal", message: "The scheduled publish run failed." };
 
-    if (!isCmsError(error)) console.error("[api/cron/publish-scheduled] unhandled:", error);
+    if (!isCmsError(error)) log.error("publish-scheduled sweep failed", { error });
 
     return Response.json(
       { job: "publish-scheduled", status: "failed", ...body, totalMs: Date.now() - startedAt },
@@ -167,6 +174,12 @@ async function runPublishScheduled(startedAt: number): Promise<Response> {
 
 async function handle(request: Request, jobParam: string): Promise<Response> {
   const startedAt = Date.now();
+
+  // A budget per source address ahead of the secret check, so a loop of wrong
+  // guesses costs the guesser a 429 rather than costing this process a hash
+  // per attempt. The scheduler runs once a minute; thirty a minute is generous.
+  const budget = rateLimit(RULES.cron, clientIp(request));
+  if (!budget.allowed) return rateLimitedResponse(budget, RULES.cron);
 
   // Authorization before the job name is even looked at: whether a given job
   // exists is not something an unauthenticated caller gets to probe for.

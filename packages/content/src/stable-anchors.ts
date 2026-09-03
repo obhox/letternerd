@@ -17,6 +17,7 @@ import type { Element, ElementContent, Root } from "hast";
 import { toString } from "hast-util-to-string";
 import { visit } from "unist-util-visit";
 import { reconcileHeadings, type HeadingDraft } from "./anchors";
+import { publishableHeadingId } from "./clobber-guard";
 import type { HeadingEntry } from "./types";
 
 const HEADING_TAGS = new Set(["h1", "h2", "h3", "h4", "h5", "h6"]);
@@ -56,18 +57,38 @@ export function rehypeStableAnchors(options: StableAnchorOptions) {
     });
 
     const slugger = new GithubSlugger();
-    const drafts: HeadingDraft[] = headings.map((node) => {
-      const text = toString(node);
+    const proposals = headings.map((node) => {
       const existing = node.properties?.["id"];
-      return {
-        depth: Number(node.tagName.slice(1)),
-        text,
-        // `rehype-slug` fills this in for us. The fallback only matters if a
-        // caller reorders the pipeline, and losing an anchor entirely is worse
-        // than an occasionally duplicated one — which `reconcileHeadings`
-        // resolves anyway.
-        slug: typeof existing === "string" && existing.length > 0 ? existing : slugger.slug(text),
-      };
+      // `rehype-slug` fills this in for us. The fallback only matters if a
+      // caller reorders the pipeline, and losing an anchor entirely is worse
+      // than an occasionally duplicated one — which `reconcileHeadings`
+      // resolves anyway.
+      return typeof existing === "string" && existing.length > 0
+        ? existing
+        : slugger.slug(toString(node));
+    });
+
+    // A slug that would clobber a DOM property ("Location" -> `location`) is
+    // suffixed here, before anything reads it, so the heading table, the
+    // copy-link and the HTML all carry the same id. The clobber guard that
+    // runs before the sanitiser would rename it otherwise — but only in the
+    // HTML, leaving the table pointing at an id that no longer exists. The
+    // suffix must also clear every other heading's slug, or "Location 1"
+    // followed by "Location" would hand both the same id and leave
+    // `reconcileHeadings` to mint `location-1-1`. A slug the guard would
+    // refuse outright (empty, over-long) is left for it to strip.
+    const taken = new Set(proposals);
+    const drafts: HeadingDraft[] = headings.map((node, index) => {
+      const proposed = proposals[index] ?? "";
+      // Every other heading's proposal counts as taken; the heading's own does
+      // not, or every slug in the document would be suffixed.
+      const slug =
+        publishableHeadingId(
+          proposed,
+          (candidate) => candidate !== proposed && taken.has(candidate),
+        ) ?? proposed;
+      taken.add(slug);
+      return { depth: Number(node.tagName.slice(1)), text: toString(node), slug };
     });
 
     const entries = reconcileHeadings(drafts, options.existingHeadings ?? []);

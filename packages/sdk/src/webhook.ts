@@ -80,10 +80,16 @@ function parseHeader(
  * the length is checked first — and because both operands are hex SHA-256, a
  * length difference means the header was malformed rather than merely wrong,
  * which leaks nothing an attacker could not determine by counting characters.
+ *
+ * Both sides are lower-cased first. Hex is case-insensitive and a proxy or a
+ * hand-rolled sender may well upper-case it; `toLowerCase` on a fixed-length
+ * string reveals nothing about the value, so the comparison stays timing-safe.
  */
 function digestsMatch(expected: string, presented: string): boolean {
-  if (expected.length !== presented.length) return false;
-  return timingSafeEqual(Buffer.from(expected, "utf8"), Buffer.from(presented, "utf8"));
+  const a = expected.toLowerCase();
+  const b = presented.toLowerCase();
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(Buffer.from(a, "utf8"), Buffer.from(b, "utf8"));
 }
 
 export function verifyWebhookSignature(options: VerifyOptions): VerifyResult {

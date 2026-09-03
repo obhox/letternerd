@@ -7,11 +7,15 @@ import {
   invalidInput,
   notFound,
   preconditionFailed,
+  publicUrlProblem,
+  URL_PROBLEM_MESSAGES,
 } from "@cms/core";
 import { ASSIGNABLE_ROLES, INVITABLE_ROLES, type SiteRole } from "@cms/core/roles";
 import { createInvitation } from "@cms/auth";
 import { generateApiKey } from "@cms/db/api-keys";
 import * as schema from "@cms/db/schema";
+import { secretsCipher } from "./connections";
+import { requireSiteRow } from "./shared";
 import type { Database } from "./services";
 
 /**
@@ -143,6 +147,18 @@ export const createApiKey = defineCapability({
   handler: async (input, { actor, services }) => {
     const issued = generateApiKey(input.type);
     const now = services.now();
+
+    /**
+     * A publishable key is only ever meant for one site's browser bundle, so
+     * an empty allow-list defaults to that site's own origins rather than to
+     * "anywhere". `originAllowed` refuses an empty list outright; this is the
+     * step that makes the default usable rather than merely closed.
+     */
+    let allowedOrigins = input.allowedOrigins.map(originOf);
+    if (input.type === "publishable" && allowedOrigins.length === 0) {
+      const site = await requireSiteRow(services.db, actor.siteId);
+      allowedOrigins = [site.baseUrl, ...site.additionalDomains].map(originOf);
+    }
     const expiresAt =
       input.expiresInDays === undefined
         ? null
@@ -157,7 +173,7 @@ export const createApiKey = defineCapability({
         keyHash: issued.keyHash,
         keyPrefix: issued.keyPrefix,
         scopes: [...issued.scopes],
-        allowedOrigins: input.allowedOrigins,
+        allowedOrigins,
         expiresAt,
         createdByUserId: actor.kind === "user" ? actor.id : null,
       })
@@ -555,6 +571,53 @@ function generateWebhookSecret(): string {
   return `whsec_${randomBytes(32).toString("base64url")}`;
 }
 
+/**
+ * Only the origin is kept: a key allow-list compares against the browser's
+ * `Origin` header, which never carries a path.
+ */
+function originOf(url: string): string {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return url;
+  }
+}
+
+/**
+ * Stored secrets are ciphertext, marked so a reader can tell.
+ *
+ * The signing secret has to be *replayed* — it keys every outbound HMAC — so
+ * it cannot be hashed the way API keys are, and a plaintext column is exactly
+ * what a database dump would hand an attacker: the ability to forge
+ * revalidation requests against every customer's production site. The same
+ * AES-256-GCM construction that protects OAuth tokens protects it, under the
+ * same key. The `enc1:` prefix lets a future deliverer distinguish a row
+ * written before this change and lets a key rotation script find its work.
+ */
+export const WEBHOOK_SECRET_PREFIX = "enc1:";
+
+export function sealWebhookSecret(plaintext: string): string {
+  return `${WEBHOOK_SECRET_PREFIX}${secretsCipher().encrypt(plaintext)}`;
+}
+
+export function openWebhookSecret(stored: string): string {
+  if (!stored.startsWith(WEBHOOK_SECRET_PREFIX)) {
+    // A row from before secrets were sealed. Readable, and flagged for the
+    // re-encryption script rather than silently treated as current.
+    return stored;
+  }
+  return secretsCipher().decrypt(stored.slice(WEBHOOK_SECRET_PREFIX.length));
+}
+
+async function assertDeliverableUrl(url: string, net: CapabilityServicesNet): Promise<void> {
+  const problem = await publicUrlProblem(url, net);
+  if (problem) {
+    throw invalidInput(`A webhook URL ${URL_PROBLEM_MESSAGES[problem]}`, { url, problem });
+  }
+}
+
+type CapabilityServicesNet = Parameters<typeof publicUrlProblem>[1];
+
 export const listWebhooks = defineCapability({
   name: "list_webhooks",
   title: "List webhooks",
@@ -598,13 +661,15 @@ export const upsertWebhook = defineCapability({
   role: "owner",
   route: { method: "PUT", path: "/settings/webhooks" },
   handler: async (input, { actor, services }) => {
-    // A hook posting over plain HTTP publishes its payload and its signature
-    // to every network in the path, which makes the HMAC decorative.
-    if (!input.url.startsWith("https://")) {
-      throw invalidInput("A webhook URL must use https — the payload and its signature are sent in the request body.", {
-        url: input.url,
-      });
-    }
+    /**
+     * Where the studio may be told to post: https only, and never anywhere
+     * private. Plain HTTP publishes the payload and its signature to every
+     * network in the path, which makes the HMAC decorative; a private address
+     * turns the deliverer into a request-forgery primitive aimed at whatever
+     * shares a network with this process. Checked here at save time and, by
+     * the deliverer, again at send time.
+     */
+    await assertDeliverableUrl(input.url, services.net);
 
     if (input.id === undefined) {
       const secret = generateWebhookSecret();
@@ -613,7 +678,7 @@ export const upsertWebhook = defineCapability({
         .values({
           siteId: actor.siteId,
           url: input.url,
-          secret,
+          secret: sealWebhookSecret(secret),
           events: input.events,
           isActive: input.isActive,
         })
@@ -639,7 +704,7 @@ export const upsertWebhook = defineCapability({
         url: input.url,
         events: input.events,
         isActive: input.isActive,
-        ...(secret === undefined ? {} : { secret }),
+        ...(secret === undefined ? {} : { secret: sealWebhookSecret(secret) }),
       })
       .where(and(eq(schema.webhooks.siteId, actor.siteId), eq(schema.webhooks.id, input.id)))
       .returning(WEBHOOK_PUBLIC_COLUMNS)) as PublicWebhook[];

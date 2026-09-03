@@ -1,0 +1,17 @@
+# Review routing. Everything falls to the repository owner; the lines below
+# name the security-relevant paths explicitly rather than by inheritance, so a
+# second maintainer can be added to one of them without taking on the whole
+# tree, and so a change there is never merged on the strength of a review
+# that skimmed it.
+*                @obhox
+
+# Authorization and the tenant boundary.
+packages/auth/   @obhox
+# The capability registry, roles and scopes.
+packages/core/   @obhox
+# Schema, migrations, API-key storage.
+packages/db/     @obhox
+# What runs in production and how.
+infra/           @obhox
+# The pipeline that builds it.
+.github/         @obhox

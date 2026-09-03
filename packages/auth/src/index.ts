@@ -1,4 +1,6 @@
 import { betterAuth } from "better-auth";
+import { APIError } from "better-auth/api";
+import { twoFactor } from "better-auth/plugins";
 import pg from "pg";
 
 export * from "./site-scope";
@@ -36,6 +38,20 @@ export interface AuthConfig {
   /** Unset means: required in production, optional everywhere else. */
   requireEmailVerification?: boolean;
   sendVerificationEmail?: (args: { to: string; url: string }) => Promise<void>;
+  /**
+   * Whether `/sign-up/email` accepts strangers. Open unless the operator says
+   * otherwise: a fresh account holds no membership and can do nothing until
+   * invited, and the endpoint is rate limited and email-verified in
+   * production. An address holding a live invitation may always register.
+   */
+  allowSignUp?: boolean;
+  /**
+   * The header carrying the client address behind the reverse proxy. Only
+   * trustworthy when the proxy overwrites it; `x-forwarded-for` by default.
+   */
+  clientIpHeader?: string;
+  /** Shown in authenticator apps next to the account. */
+  twoFactorIssuer?: string;
 }
 
 /**
@@ -65,9 +81,35 @@ function resolveVerificationPolicy(config: AuthConfig): boolean {
   return required;
 }
 
+export interface SignUpPolicyArgs {
+  allowSignUp: boolean;
+  email: string;
+  /** Whether a live, unaccepted invitation exists for the normalised address. */
+  hasLiveInvitation: (email: string) => Promise<boolean>;
+}
+
+/**
+ * The registration decision, separated from better-auth so it can be tested
+ * without a database: open installs admit anyone, closed installs admit only
+ * an address that has been invited. The refusal is an `APIError` because that
+ * is what better-auth turns into a proper 403 with a stable code the sign-up
+ * form can name.
+ */
+export async function assertSignUpPermitted(args: SignUpPolicyArgs): Promise<void> {
+  if (args.allowSignUp) return;
+  const email = args.email.trim().toLowerCase();
+  if (email && (await args.hasLiveInvitation(email))) return;
+  throw new APIError("FORBIDDEN", {
+    code: "SIGNUP_BY_INVITATION_ONLY",
+    message: "This studio creates accounts by invitation only.",
+  });
+}
+
 export function createAuth(config: AuthConfig) {
   const requireEmailVerification = resolveVerificationPolicy(config);
   const sendVerificationEmail = config.sendVerificationEmail;
+
+  const allowSignUp = config.allowSignUp ?? true;
 
   const pool = new pg.Pool({
     connectionString: config.connectionString,
@@ -91,6 +133,64 @@ export function createAuth(config: AuthConfig) {
       requireEmailVerification,
       autoSignIn: true,
     },
+
+    /**
+     * Registration policy, enforced where the row is created.
+     *
+     * When sign-up is closed, an account may still be created for an address
+     * that holds a live invitation — the invitation is the authorisation, and
+     * refusing it would make "invite a colleague" impossible on exactly the
+     * installs that closed sign-up for safety. A hook rather than
+     * `disableSignUp`, because that flag refuses before any question can be
+     * asked. The lookup is by normalised address; the invitation itself is
+     * still redeemed, and its address re-checked, by `acceptInvitation`.
+     */
+    databaseHooks: {
+      user: {
+        create: {
+          before: async (user) => {
+            await assertSignUpPermitted({
+              allowSignUp,
+              email: String(user.email ?? ""),
+              hasLiveInvitation: async (email) => {
+                const { rows } = await pool.query<{ ok: number }>(
+                  "select 1 as ok from site_invitations where lower(email) = $1 and accepted_at is null and expires_at > now() limit 1",
+                  [email],
+                );
+                return rows.length > 0;
+              },
+            });
+          },
+        },
+      },
+    },
+
+    /**
+     * TOTP second factor.
+     *
+     * Optional for everyone; the studio decides per role whether it is
+     * required (`CMS_REQUIRE_2FA_ROLE`) — an owner mints API keys and
+     * publishes to live sites, and a phished password should not be enough for
+     * either. Backup codes are issued at enrolment for the lost-phone case.
+     * The plugin stores the TOTP secret encrypted with `secret`.
+     */
+    plugins: [
+      twoFactor({
+        issuer: config.twoFactorIssuer ?? "CMS Studio",
+        schema: {
+          twoFactor: {
+            modelName: "two_factor",
+            fields: {
+              userId: "user_id",
+              backupCodes: "backup_codes",
+              failedVerificationCount: "failed_verification_count",
+              lockedUntil: "locked_until",
+            },
+          },
+          user: { fields: { twoFactorEnabled: "two_factor_enabled" } },
+        },
+      }),
+    ],
 
     emailVerification: {
       // Nothing to send when no sender exists; `resolveVerificationPolicy` has
@@ -131,6 +231,11 @@ export function createAuth(config: AuthConfig) {
         "/forget-password": { window: 3600, max: 5 },
         "/reset-password": { window: 3600, max: 5 },
         "/send-verification-email": { window: 3600, max: 5 },
+        // A six-digit code is guessable in a million tries; five a window is not.
+        "/two-factor/verify-totp": { window: 300, max: 5 },
+        "/two-factor/verify-backup-code": { window: 300, max: 5 },
+        "/two-factor/enable": { window: 3600, max: 10 },
+        "/two-factor/disable": { window: 3600, max: 10 },
       },
     },
 
@@ -142,7 +247,7 @@ export function createAuth(config: AuthConfig) {
        * is only trustworthy because the proxy in front overwrites it with the
        * real peer; it must not be forwarded from anywhere else.
        */
-      ipAddress: { ipAddressHeaders: ["x-forwarded-for"] },
+      ipAddress: { ipAddressHeaders: [config.clientIpHeader ?? "x-forwarded-for"] },
       useSecureCookies: process.env.NODE_ENV === "production",
     },
 

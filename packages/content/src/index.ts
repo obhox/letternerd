@@ -53,6 +53,7 @@ export { levenshtein, normalizeHeadingText, similarity } from "./similarity";
 
 export {
   EMBED_PROVIDERS,
+  isWebUrl,
   resolveEmbed,
   type EmbedInfo,
   type EmbedProvider,
@@ -61,6 +62,7 @@ export {
 export { MEDIA_PROTOCOL, mediaId, type MediaResolver } from "./media";
 
 export { contentSanitizeSchema } from "./sanitize-schema";
+export { ID_PATTERN, RESERVED_IDS, isPublishableId, publishableHeadingId } from "./clobber-guard";
 
 export {
   analyseReadability,

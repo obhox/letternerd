@@ -906,6 +906,29 @@ export function classifyUserAgent(
   return null;
 }
 
+/** A beacon reports what just happened; a day's batching is the most it may lag. */
+const OCCURRED_AT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const OCCURRED_AT_MAX_SKEW_MS = 5 * 60 * 1000;
+
+/**
+ * A caller-supplied timestamp is accepted only within a window around now.
+ *
+ * The beacon can be called with a publishable key, which ships in a browser
+ * bundle and is therefore public. Without this, anyone holding one could
+ * backdate "hits" to before a document was published and rewrite the
+ * time-to-first-crawl metric the product is sold on. A value outside the
+ * window is replaced with the server's clock rather than refused, because a
+ * consuming site with a wrong clock is a support ticket, not an attacker.
+ */
+export function clampOccurredAt(raw: string | undefined, now: Date): Date {
+  if (!raw) return now;
+  const claimed = new Date(raw);
+  if (Number.isNaN(claimed.getTime())) return now;
+  const delta = now.getTime() - claimed.getTime();
+  if (delta > OCCURRED_AT_MAX_AGE_MS || delta < -OCCURRED_AT_MAX_SKEW_MS) return now;
+  return claimed;
+}
+
 export const ingestCrawlerHits = defineCapability({
   name: "ingest_crawler_hits",
   title: "Record crawler hits",
@@ -981,7 +1004,7 @@ export const ingestCrawlerHits = defineCapability({
         // No IP is accepted at all. The consuming site holds it, and a hash
         // would still be a per-visitor identifier we have no need for.
         ipHash: null,
-        occurredAt: h.occurredAt ? new Date(h.occurredAt) : now,
+        occurredAt: clampOccurredAt(h.occurredAt, now),
       })),
     );
 

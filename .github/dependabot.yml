@@ -1,0 +1,50 @@
+# Keeps three kinds of pin current: npm packages, the action SHAs in
+# .github/workflows, and the base-image digests in infra/.
+#
+# The seven-day cooldown mirrors `minimum-release-age` in .npmrc and exists for
+# the same reason: a maintainer's account is taken over, a malicious patch
+# release goes out, and the same-day pull request that would have pulled it
+# in is the attack's delivery mechanism. A week is long enough for that
+# release to be noticed and pulled; the incidents so far were caught in hours.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 7
+    # One pull request for every minor and patch bump rather than one each.
+    # Majors stay separate because they are the ones that need reading.
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 7
+
+  # The Dockerfiles. Dependabot only follows literal `FROM image:tag@sha256`
+  # lines, which is why each Dockerfile pins on one `base` stage rather than
+  # through an ARG.
+  - package-ecosystem: docker
+    directory: /infra/docker
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 7
+
+  # The compose files: Postgres and MinIO for local development.
+  - package-ecosystem: docker
+    directory: /infra
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 7

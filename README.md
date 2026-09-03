@@ -64,3 +64,8 @@ Self-hosting is the intended way to run this. The studio is one container plus a
 Postgres database, and every artifact a search or answer engine reads is served
 from your own domain rather than from the CMS, so nothing about the deployment
 ties your content's URLs to this project.
+
+## Security
+
+Report a vulnerability as described in `SECURITY.md`. `docs/THREAT_MODEL.md`
+names the assets, the trust boundaries and the file that defends each one.

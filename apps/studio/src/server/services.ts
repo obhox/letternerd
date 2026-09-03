@@ -1,4 +1,7 @@
+import { lookup } from "node:dns/promises";
 import { createDb, type Database } from "@cms/db";
+import type { ServiceLimits } from "@cms/capabilities";
+import type { NetService } from "@cms/core";
 import { createStorage, type StorageService } from "@cms/media";
 import { env } from "@/env";
 
@@ -13,7 +16,7 @@ import { env } from "@/env";
 
 declare global {
   // eslint-disable-next-line no-var
-  var __cmsServices: { db: Database; storage: StorageService } | undefined;
+  var __cmsServices: { db: Database; storage: StorageService; limits: ServiceLimits; net: NetService } | undefined;
 }
 
 function build() {
@@ -28,6 +31,12 @@ function build() {
       secretAccessKey: env.S3_SECRET_ACCESS_KEY,
       cdnBaseUrl: env.MEDIA_CDN_URL,
     }),
+    limits: { maxUploadBytes: env.MEDIA_MAX_UPLOAD_BYTES },
+    net: {
+      // Every answer, both families: a name with one public and one private
+      // address is refused by the caller, and only a full answer reveals that.
+      resolve: async (hostname: string) => (await lookup(hostname, { all: true })).map((a) => a.address),
+    },
   };
 }
 
@@ -38,4 +47,6 @@ if (process.env.NODE_ENV !== "production") globalThis.__cmsServices = services;
 
 export const db = services.db;
 export const storage = services.storage;
+export const limits = services.limits;
+export const net = services.net;
 export const now = () => new Date();

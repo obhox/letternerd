@@ -44,6 +44,18 @@ import type {
 } from "./demo/types";
 
 /**
+ * Never against production. Both the default credentials below and the demo
+ * content exist so a laptop has something to click on; on a public host they
+ * are a published password. `--i-know-this-is-production` is the override for
+ * an operator who has read this and means it.
+ */
+if (process.env.NODE_ENV === "production" && !process.argv.includes("--i-know-this-is-production")) {
+  console.error(`[${process.argv[1]?.split("/").pop()}] refusing to run with NODE_ENV=production.`);
+  process.exit(1);
+}
+
+
+/**
  * Build the Acme demo site: a full corpus a screenshot can be taken of.
  *
  *   pnpm --filter @cms/studio seed-demo

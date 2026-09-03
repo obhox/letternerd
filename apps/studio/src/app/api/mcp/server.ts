@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { registry } from "@cms/capabilities";
+import { invokeAudited, registry } from "@cms/capabilities";
 import { isCmsError, mcpAnnotations, rawShapeOf, type Actor } from "@cms/core";
-import { db, storage, now } from "@/server/services";
+import { db, storage, now, limits } from "@/server/services";
 import { SERVER_NAME, SERVER_VERSION } from "./catalog";
 
 
@@ -60,7 +60,11 @@ export function buildMcpServer(actor: Actor): McpServer {
       },
       async (input: unknown) => {
         try {
-          const data = await cap.invoke(input, { actor, services: { db, storage, now } });
+          const data = await invokeAudited(cap, input, {
+            actor,
+            services: { db, storage, now, limits },
+            transport: "mcp",
+          });
           return {
             content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
           };

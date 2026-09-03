@@ -22,6 +22,13 @@
       "when": 1788399079189,
       "tag": "0002_omniscient_sleepwalker",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788433194232,
+      "tag": "0003_elite_sphinx",
+      "breakpoints": true
     }
   ]
 }

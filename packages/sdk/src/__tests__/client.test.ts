@@ -53,6 +53,40 @@ describe("transport", () => {
     expect(() => createCmsClient({ baseUrl: "", key: "k" })).toThrow(TypeError);
     expect(() => createCmsClient({ baseUrl: "https://x", key: "" })).toThrow(TypeError);
   });
+
+  /**
+   * The key rides on every request as a bearer token. A base URL with the
+   * wrong scheme would hand it to every hop between the site and the CMS, so
+   * the client refuses at construction — before there is a request to leak on.
+   */
+  it("refuses a plain-http base URL, and says why", () => {
+    expect(() => createCmsClient({ baseUrl: "http://cms.example.com/api/v1", key: "k" })).toThrow(
+      TypeError,
+    );
+    expect(() => createCmsClient({ baseUrl: "http://cms.example.com/api/v1", key: "k" })).toThrow(
+      /refusing to send the API key over http to cms\.example\.com/,
+    );
+    expect(() => createCmsClient({ baseUrl: "ftp://cms.example.com", key: "k" })).toThrow(TypeError);
+    expect(() => createCmsClient({ baseUrl: "not a url", key: "k" })).toThrow(/not a valid URL/);
+  });
+
+  it("allows plain http only to a loopback host", async () => {
+    for (const baseUrl of [
+      "http://localhost:3000/api/v1",
+      "http://127.0.0.1:3000/api/v1",
+      "http://[::1]:3000/api/v1",
+      "http://studio.localhost:3000/api/v1",
+    ]) {
+      const fetcher = fakeFetch(() => json(site));
+      const client = createCmsClient({ baseUrl, key: "k", fetch: fetcher.fetch });
+      await client.getSite();
+      expect(fetcher.last().url.href.startsWith(baseUrl)).toBe(true);
+    }
+    // A name that merely contains "localhost" is not loopback.
+    expect(() => createCmsClient({ baseUrl: "http://localhost.evil.com", key: "k" })).toThrow(
+      TypeError,
+    );
+  });
 });
 
 describe("pagination", () => {

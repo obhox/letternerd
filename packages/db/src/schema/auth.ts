@@ -1,4 +1,4 @@
-import { boolean, index, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, index, integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 /**
  * better-auth's tables, declared here so the rest of the schema can hold real
@@ -24,6 +24,9 @@ export const user = pgTable(
      * cross-site operational screens.
      */
     isPlatformAdmin: boolean("is_platform_admin").notNull().default(false),
+
+    /** Maintained by better-auth's twoFactor plugin; never settable through sign-up. */
+    twoFactorEnabled: boolean("two_factor_enabled").notNull().default(false),
 
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -105,4 +108,27 @@ export const verification = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("verification_identifier_idx").on(t.identifier)],
+);
+
+/**
+ * TOTP enrolment, one row per user.
+ *
+ * `secret` and `backup_codes` are stored encrypted by better-auth under the
+ * auth secret. The lockout columns are the plugin's brute-force brake on top
+ * of the per-path rate limit in `@cms/auth`.
+ */
+export const twoFactor = pgTable(
+  "two_factor",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    secret: text("secret").notNull(),
+    backupCodes: text("backup_codes").notNull(),
+    verified: boolean("verified").notNull().default(true),
+    failedVerificationCount: integer("failed_verification_count").notNull().default(0),
+    lockedUntil: timestamp("locked_until", { withTimezone: true }),
+  },
+  (t) => [index("two_factor_user_idx").on(t.userId), index("two_factor_secret_idx").on(t.secret)],
 );

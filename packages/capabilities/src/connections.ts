@@ -1,7 +1,14 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { z } from "zod";
 import { and, asc, eq } from "drizzle-orm";
-import { conflict, defineCapability, invalidInput, notFound, preconditionFailed } from "@cms/core";
+import {
+  conflict,
+  createLogger,
+  defineCapability,
+  invalidInput,
+  notFound,
+  preconditionFailed,
+} from "@cms/core";
 import {
   createSearchConsoleProvider,
   isAnalyticsError,
@@ -67,6 +74,8 @@ import type { Database } from "./services";
 const ALGORITHM = "aes-256-gcm";
 
 /** AES-256 takes exactly this. Anything else is a configuration error. */
+const connectionsLog = createLogger("connections");
+
 export const ENCRYPTION_KEY_BYTES = 32;
 
 /**
@@ -240,6 +249,15 @@ export function createTokenCipher(rawKey: string | undefined | null): TokenCiphe
  * uses instead of touching `process.env`.
  */
 let cachedCipher: { rawKey: string; cipher: TokenCipher } | undefined;
+
+/**
+ * The cipher every stored secret goes through — OAuth tokens and webhook
+ * signing secrets alike. One key, one construction, one place to rotate.
+ * `analyticsTokenCipher` is the older name for the same thing.
+ */
+export function secretsCipher(rawKey?: string | undefined): TokenCipher {
+  return analyticsTokenCipher(rawKey);
+}
 
 export function analyticsTokenCipher(
   rawKey: string | undefined = process.env["ANALYTICS_ENCRYPTION_KEY"],
@@ -649,9 +667,15 @@ function describeFailure(error: unknown): { message: string; retryable: boolean 
   if (error instanceof TokenDecryptionError || error instanceof EncryptionKeyError) {
     return { message: error.message, retryable: false };
   }
+  /**
+   * Anything else is a bug or an outage, and its message is for the log, not
+   * for a settings screen: a raw undici error can carry the request it was
+   * making, and the encryption-key error above names an environment variable.
+   */
+  connectionsLog.error("connection check failed unexpectedly", { error });
   return {
-    message: error instanceof Error ? error.message : String(error),
-    retryable: false,
+    message: "The connection could not be checked. Try again, or ask an operator to look at the logs.",
+    retryable: true,
   };
 }
 

@@ -1,3 +1,4 @@
+import type { NetService } from "@cms/core";
 import type { Database } from "@cms/db";
 import type { StorageService } from "@cms/media";
 
@@ -21,7 +22,25 @@ declare module "@cms/core" {
     storage: StorageService;
     /** Injected so tests can freeze it; publishing and scheduling both care. */
     now: () => Date;
+    /**
+     * Deployment-specific ceilings. Optional because every transport that
+     * omits them gets the compiled-in defaults, which are the hard maximums —
+     * configuration can only lower a limit, never raise it past what the
+     * schema was written to bound.
+     */
+    limits?: ServiceLimits;
+    /**
+     * DNS, for the outbound-URL checks. Optional so a test can run without a
+     * network and a transport that has none skips the resolved check; the
+     * syntactic half always runs.
+     */
+    net?: NetService;
   }
+}
+
+export interface ServiceLimits {
+  /** Decoded bytes a single upload may carry. Capped by `MAX_UPLOAD_BYTES`. */
+  maxUploadBytes?: number;
 }
 
 export type { Database, StorageService };

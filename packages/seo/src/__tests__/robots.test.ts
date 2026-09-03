@@ -54,6 +54,23 @@ describe("buildRobotsTxt", () => {
     expect(txt.trimEnd().endsWith("Disallow: /internal/")).toBe(true);
   });
 
+  it("cannot be handed a new directive through a disallow entry", () => {
+    const txt = buildRobotsTxt(site, {
+      disallow: ["/preview/\nUser-agent: Googlebot\r\nDisallow: /", "  /api/  ", "", " \r\n "],
+    });
+
+    // The injected group never becomes a line of its own.
+    expect(txt).not.toMatch(/^User-agent: Googlebot$/m);
+    expect(txt).not.toMatch(/^Disallow: \/$/m);
+    // Blank entries vanish rather than becoming an empty `Disallow:`.
+    expect(txt).not.toMatch(/^Disallow:\s*$/m);
+    // What survives is one Disallow per non-blank entry, trimmed, in order.
+    expect(txt).toContain(
+      "User-agent: *\nAllow: /\nDisallow: /preview/User-agent: GooglebotDisallow: /\nDisallow: /api/\n\n",
+    );
+    expect(txt.match(/^Disallow: /gm)).toHaveLength(3);
+  });
+
   it("takes a sitemap path for a site that serves an index instead", () => {
     expect(buildRobotsTxt(site, { sitemapPath: "/sitemap-index.xml" })).toContain(
       "Sitemap: https://spendtab.com/sitemap-index.xml",

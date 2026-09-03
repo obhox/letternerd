@@ -34,6 +34,20 @@ function siteHeader(site: SeoSite): string {
 /** The category grouping heading for entries that have no category. */
 const UNCATEGORISED = "Other";
 
+/**
+ * A title as the text of a markdown link.
+ *
+ * Inside `[…](url)` a bracket or a parenthesis is structural: a title such as
+ * "Read [this] (now)" would close the link text at the first `]`, and what
+ * follows is then free-standing markdown — with the URL after it, a second
+ * link the author never wrote. Those four characters are backslash-escaped,
+ * and so is the backslash itself, or a title ending in `\` would escape the
+ * closing bracket we add. Everything else is literal in link text.
+ */
+function linkText(title: string): string {
+  return title.replace(/[\\[\]()]/g, "\\$&");
+}
+
 export function buildLlmsTxt(index: LlmsIndexEntry[], site: SeoSite): string {
   // Insertion order is the caller's order, so a caller that sorted by date or
   // by importance keeps that ordering inside each group. Grouping is by
@@ -53,7 +67,8 @@ export function buildLlmsTxt(index: LlmsIndexEntry[], site: SeoSite): string {
     for (const entry of entries) {
       const url = canonicalUrlFor(site, entry);
       const summary = (entry.description ?? entry.excerpt ?? "").replace(/\s+/g, " ").trim();
-      lines.push(summary ? `- [${entry.title}](${url}): ${summary}` : `- [${entry.title}](${url})`);
+      const text = linkText(entry.title);
+      lines.push(summary ? `- [${text}](${url}): ${summary}` : `- [${text}](${url})`);
     }
     lines.push("");
   }
@@ -91,15 +106,32 @@ function frontmatter(doc: SeoDocument, site: SeoSite): string {
 }
 
 /**
- * One document's block: its frontmatter, then its markdown.
+ * A line of `---` on its own is a thematic break in markdown and the fence
+ * that opens the next document's frontmatter in this file. Escaped, it is
+ * still three dashes to a markdown renderer and nothing to a frontmatter
+ * parser. Only the exact line is escaped: `----` and `- - -` are breaks too,
+ * but neither is a fence, so neither can be mistaken for one.
+ */
+function escapeFence(body: string): string {
+  return body
+    .split("\n")
+    .map((line) => (line.trim() === "---" ? "\\---" : line))
+    .join("\n");
+}
+
+/**
+ * One document's block: its frontmatter, then its markdown body.
  *
  * The opening `---` of the frontmatter is also the separator between
- * documents, which is the only arrangement where a reader can tell where one
- * article stops without the separator being ambiguous with a horizontal rule
- * inside a body.
+ * documents. The body is markdown, not plain text, so it can legitimately
+ * contain a `---` thematic break of its own — and to a reader splitting this
+ * file on fences, that line would end the article early and start a bogus
+ * frontmatter block with the rest of the body inside it. Every such line is
+ * escaped (see `escapeFence`), which keeps the fence unambiguous without
+ * changing what the body renders as.
  */
 function documentBlock(doc: SeoDocument, site: SeoSite): string {
-  const body = (doc.bodyText ?? doc.excerpt ?? doc.description ?? "").trim();
+  const body = escapeFence((doc.bodyText ?? doc.excerpt ?? doc.description ?? "").trim());
   return `---\n${frontmatter(doc, site)}\n---\n\n# ${doc.title}\n\n${body}\n\n`;
 }
 

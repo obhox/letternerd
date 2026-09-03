@@ -14,7 +14,7 @@ import type { ElementContent, Properties } from "hast";
 import { toString } from "mdast-util-to-string";
 import type { Heading, List, ListItem, Root, RootContent } from "mdast";
 import { SKIP, visit } from "unist-util-visit";
-import { resolveEmbed } from "./embeds";
+import { isWebUrl, resolveEmbed } from "./embeds";
 import { applyElement, element, type BlockChild } from "./mdast-html";
 import type { HowToBlock, LintFinding } from "./types";
 
@@ -276,13 +276,22 @@ function embed(node: DirectiveNode, harvest: DirectiveHarvest): void {
     });
     applyElement(node, url ? "p" : "div", { className: ["cms-embed", "cms-embed--plain"] });
     if (url) {
+      const text = {
+        type: "text" as const,
+        value: toString(node as unknown as RootContent) || url,
+      };
+      // A URL that is not on the web — `javascript:`, `data:`, a bare word —
+      // is rendered as text rather than as a link with a dangerous href for
+      // the sanitiser to catch. The lint above has already told the author.
       (node.data ??= {}).hChildren = [
-        {
-          type: "element",
-          tagName: "a",
-          properties: { href: url, rel: ["nofollow", "noopener"] },
-          children: [{ type: "text", value: toString(node as unknown as RootContent) || url }],
-        },
+        isWebUrl(url)
+          ? {
+              type: "element",
+              tagName: "a",
+              properties: { href: url, rel: ["nofollow", "noopener"] },
+              children: [text],
+            }
+          : text,
       ];
     }
     return;
