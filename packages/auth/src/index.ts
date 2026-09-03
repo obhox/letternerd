@@ -5,6 +5,7 @@ import pg from "pg";
 
 export * from "./site-scope";
 export * from "./invitations";
+export * from "./sites";
 
 /**
  * Authentication for studio users, configured once and shared by every app

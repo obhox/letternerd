@@ -57,6 +57,8 @@ export const RULES = {
   health: { name: "health", limit: 60, windowMs: 60_000 },
   /** Invitation redemption attempts, per source address: a token-guessing brake. */
   acceptInvite: { name: "accept-invite", limit: 10, windowMs: 300_000 },
+  /** Site creation, per account: open signup makes this the next-cheapest loop to run. */
+  createSite: { name: "create-site", limit: 5, windowMs: 3_600_000 },
 } as const satisfies Record<string, RateLimitRule>;
 
 interface Bucket {
