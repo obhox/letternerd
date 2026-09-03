@@ -1,0 +1,20 @@
+# Secret scanning configuration (gitleaks).
+#
+# Test suites need values that *pass* the production strength rule — 64 hex
+# characters, high entropy — precisely because the rule exists to reject
+# anything weaker. Those fixtures are generated in-test where possible; the
+# allow-list below covers test directories so a fixture never fails the scan,
+# and covers nothing else. The example environment file is a placeholder by
+# construction and is checked by the studio's own boot-time deny-list.
+title = "cms"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Test fixtures and the placeholder environment file"
+paths = [
+  '''(^|/)__tests__/''',
+  '''\.test\.(ts|tsx)$''',
+  '''^\.env\.example$''',
+]

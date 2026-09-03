@@ -1,0 +1,14 @@
+# CodeQL configuration for the JavaScript/TypeScript analysis.
+#
+# `js/insufficient-password-hash` is excluded on purpose. It fires on
+# `hashApiKey` in packages/db/src/api-keys.ts, which SHA-256s API keys and
+# invitation tokens before they are stored. Those are 256-bit random values,
+# not user-chosen passwords; there is no dictionary to defend against, and a
+# slow hash on every API request would only make the endpoint cheap to
+# exhaust. The file says so at length. User passwords never pass through that
+# code — better-auth hashes them with scrypt — so the rule has nothing true
+# left to find here.
+name: "cms"
+query-filters:
+  - exclude:
+      id: js/insufficient-password-hash

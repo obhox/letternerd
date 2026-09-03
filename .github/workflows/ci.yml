@@ -42,6 +42,11 @@ jobs:
       # critical advisory, before `pnpm audit` has to find it installed. It
       # compares the two sides of the diff, so it only means anything on a PR.
       - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        # Non-blocking until the repository's Dependency graph is switched on
+        # (Settings → Code security). Without it the action cannot run at all and
+        # would fail every pull request for a reason unrelated to the change;
+        # once the graph exists, drop this line so a vulnerable addition blocks.
+        continue-on-error: true
         if: github.event_name == 'pull_request'
         with:
           fail-on-severity: high
