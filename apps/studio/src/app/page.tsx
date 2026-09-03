@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Card, CardContent, EmptyState, PageHeader } from "@cms/ui";
+import { PlusIcon } from "lucide-react";
+import { Button, Card, CardContent, EmptyState, PageHeader } from "@cms/ui";
 import { currentUser, sitesForCurrentUser } from "@/server/context";
 
 /**
@@ -20,17 +21,28 @@ export default async function Page() {
     redirect(`/${memberships[0]!.site.slug}`);
   }
 
+  const addSite = (
+    <Button asChild>
+      <Link href="/sites/new">
+        <PlusIcon aria-hidden="true" />
+        Add site
+      </Link>
+    </Button>
+  );
+
   return (
     <main className="mx-auto max-w-3xl px-6 py-16">
       <PageHeader
         title="Your sites"
         description={`Signed in as ${user.email}.`}
+        actions={memberships.length > 0 ? addSite : undefined}
       />
 
       {memberships.length === 0 ? (
         <EmptyState
           title="No sites yet"
-          description="You are not a member of any site. Ask an owner to invite you, or seed one locally with `pnpm db:seed`."
+          description="Create your own site to get started, or ask an owner to invite you to theirs."
+          action={addSite}
         />
       ) : (
         <ul className="mt-8 grid gap-3">
