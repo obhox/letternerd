@@ -19,6 +19,8 @@ COPY packages/auth/package.json    packages/auth/
 COPY packages/content/package.json packages/content/
 COPY packages/seo/package.json     packages/seo/
 COPY packages/media/package.json   packages/media/
+COPY packages/analytics/package.json    packages/analytics/
+COPY packages/capabilities/package.json packages/capabilities/
 RUN pnpm install --frozen-lockfile
 
 FROM deps AS build

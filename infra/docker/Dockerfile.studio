@@ -28,6 +28,8 @@ COPY packages/auth/package.json    packages/auth/
 COPY packages/content/package.json packages/content/
 COPY packages/seo/package.json     packages/seo/
 COPY packages/media/package.json   packages/media/
+COPY packages/analytics/package.json    packages/analytics/
+COPY packages/capabilities/package.json packages/capabilities/
 COPY packages/ui/package.json      packages/ui/
 COPY packages/sdk/package.json     packages/sdk/
 COPY apps/studio/package.json      apps/studio/
@@ -40,14 +42,32 @@ WORKDIR /repo
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1 \
-    # @cms/auth throws at import time under NODE_ENV=production when no mail
-    # provider is configured, and `next build` evaluates it while collecting
-    # page data. RESEND_API_KEY is a runtime service variable, not a build
-    # argument — passing a real key here would bake a secret into the image.
-    # This asserts production's own default rather than disabling it, and it
-    # exists only in this stage; the runtime image below never sees it, so the
-    # container evaluates the real rule against the real key.
-    CMS_REQUIRE_EMAIL_VERIFICATION=true
+    # @cms/auth REFUSES TO CONSTRUCT when verification is required and no mail
+    # sender is configured — deliberately, so a production deploy cannot
+    # silently accept unverified addresses. `next build` evaluates the auth
+    # route while collecting page data, and the build stage has no mail
+    # provider, so that guard fires and fails the build.
+    #
+    # Setting this false is therefore a build-stage necessity, not a weakening.
+    # RESEND_API_KEY is a runtime service variable and passing a real one here
+    # would bake a secret into a layer. The runtime stage is a separate FROM and
+    # inherits nothing from here, so the container falls back to the real rule —
+    # required whenever NODE_ENV is production — and still refuses to start
+    # without a sender.
+    CMS_REQUIRE_EMAIL_VERIFICATION=false \
+    # `next build` imports every route module to collect page data, and
+    # src/env.ts validates on import and throws when a required variable is
+    # absent. Any route reaching env — the OAuth start route is the first —
+    # therefore fails the build with "Failed to collect page data", which names
+    # the route and not the cause.
+    #
+    # These are obviously-fake build-stage placeholders. The runtime stage is a
+    # separate FROM and inherits none of them, so the container still reads the
+    # real values and still refuses to start without them. Deliberately not
+    # plausible: nothing here should ever be mistaken for a usable default.
+    DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build-time-placeholder \
+    BETTER_AUTH_SECRET=build-time-placeholder-not-a-real-secret-0000000000 \
+    CMS_STUDIO_URL=http://build-time-placeholder.invalid
 
 # transpilePackages compiles the workspace packages from source, so the build
 # needs the whole tree above rather than a pruned copy.

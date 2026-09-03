@@ -1,0 +1,35 @@
+# Without this, `COPY . .` drags the host's node_modules into the image.
+#
+# That is not merely wasteful — it is why a build could pass locally and fail in
+# CI. pnpm's symlinked store arrived pre-populated from the developer's machine,
+# so a workspace package whose manifest was never COPYed in the deps stage still
+# resolved. The image was built from host state rather than from the lockfile,
+# and the first clean checkout is where that gets discovered.
+node_modules
+**/node_modules
+
+# Build output. Regenerated inside the image; copying a host build in can also
+# poison it with paths that only exist on the developer's machine.
+.next
+**/.next
+dist
+**/dist
+*.tsbuildinfo
+**/*.tsbuildinfo
+.turbo
+**/.turbo
+
+# Secrets never belong in a layer, even one that is later discarded.
+.env
+.env.*
+!.env.example
+
+# Local infrastructure state.
+infra/.data
+
+.git
+.github
+coverage
+**/coverage
+.DS_Store
+*.log
