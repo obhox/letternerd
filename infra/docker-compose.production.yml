@@ -14,7 +14,7 @@ services:
   # schema that does not exist yet. The migrator takes a Postgres advisory lock,
   # which covers the other half: two simultaneous deploys both running this.
   migrate:
-    image: ${CMS_IMAGE_PREFIX:-ghcr.io/obhox/cms}-db:${CMS_IMAGE_TAG:-latest}
+    image: ${CMS_IMAGE_PREFIX:-ghcr.io/obhox/letternerd}-db:${CMS_IMAGE_TAG:-latest}
     pull_policy: always
     restart: "no"
     command: ["node_modules/.bin/tsx", "src/migrate.ts"]
@@ -22,7 +22,7 @@ services:
       DATABASE_URL: ${DATABASE_URL}
 
   studio:
-    image: ${CMS_IMAGE_PREFIX:-ghcr.io/obhox/cms}-studio:${CMS_IMAGE_TAG:-latest}
+    image: ${CMS_IMAGE_PREFIX:-ghcr.io/obhox/letternerd}-studio:${CMS_IMAGE_TAG:-latest}
     # Load-bearing when running the `latest` tag: without it a redeploy reuses
     # the cached image and silently changes nothing.
     pull_policy: always
