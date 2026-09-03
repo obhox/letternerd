@@ -65,9 +65,18 @@ What it will not do
   those is printed at the end with what you need to do by hand.
 `;
 
+/**
+ * A plain bag of strings rather than `NodeJS.ProcessEnv`.
+ *
+ * Next augments `ProcessEnv` with required members, and a test that wants to
+ * pass two variables should not have to satisfy a framework's idea of a
+ * complete environment.
+ */
+export type EnvLike = Record<string, string | undefined>;
+
 const PACKAGE_MANAGERS: readonly string[] = ["pnpm", "npm", "yarn"];
 
-function readEnv(env: NodeJS.ProcessEnv, ...names: string[]): string | null {
+function readEnv(env: EnvLike, ...names: string[]): string | null {
   for (const name of names) {
     const value = env[name]?.trim();
     if (value) return value;
@@ -75,7 +84,7 @@ function readEnv(env: NodeJS.ProcessEnv, ...names: string[]): string | null {
   return null;
 }
 
-export function parseArgs(argv: string[], env: NodeJS.ProcessEnv = process.env): CliOptions {
+export function parseArgs(argv: string[], env: EnvLike = process.env): CliOptions {
   const flags = new Map<string, string | true>();
   const positional: string[] = [];
 

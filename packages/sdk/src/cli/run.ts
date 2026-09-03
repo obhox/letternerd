@@ -1,6 +1,7 @@
 import { resolve } from "node:path";
 import { applyPlan, formatOutcomes, formatRemainingWork } from "./apply";
 import { HELP, parseArgs } from "./args";
+import type { EnvLike } from "./args";
 import { detectProject } from "./detect";
 import { fallbackPlan, fetchPlan, studioOriginFromApiUrl } from "./plan";
 import type { ResolvedPlan } from "./plan";
@@ -22,7 +23,7 @@ export interface Io {
   log: (line: string) => void;
   error: (line: string) => void;
   cwd: () => string;
-  env: NodeJS.ProcessEnv;
+  env: EnvLike;
   fetchImpl?: typeof fetch;
 }
 

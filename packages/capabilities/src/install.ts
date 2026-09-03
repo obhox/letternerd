@@ -106,23 +106,22 @@ function trimSlash(value: string): string {
 /**
  * Installing it.
  *
- * The package is `private: true` and has never been published, so the registry
- * command in most integration guides would simply 404. Both forms below are
- * real; the `file:` one resolves through `dist/`, which is why the build comes
- * first.
+ * Published now, but under the `next` dist-tag while the product is
+ * pre-release — so a bare `pnpm add @letternerd/sdk` does NOT resolve and the
+ * tag has to be explicit. The local forms are kept below because someone
+ * working inside this checkout still wants them, and because they are what
+ * works if the registry is unreachable.
  */
 export function installSnippet(): string {
   return [
-    "# @letternerd/sdk is not on npm yet, so there is no registry install.",
-    "# It builds to dist/, and a file: dependency resolves through dist/ —",
-    "# so build it once in the CMS checkout first:",
+    "# Published under the `next` tag while the product is pre-release,",
+    "# so the tag is required — a bare install will not resolve.",
+    "pnpm add @letternerd/sdk@next",
+    "",
+    "# Working inside the CMS checkout instead? Build it once, then",
+    "# depend on it by path — a file: dependency resolves through dist/.",
     "pnpm --filter @letternerd/sdk build",
-    "",
-    "# Then, from your site, depend on the checkout by path:",
     "pnpm add @letternerd/sdk@file:../cms/packages/sdk",
-    "",
-    "# Or, if your site already lives in this pnpm workspace:",
-    "pnpm add @letternerd/sdk@workspace:*",
   ].join("\n");
 }
 
@@ -830,7 +829,13 @@ export const getInstallPlan = defineCapability({
   role: "author",
   readOnly: true,
   idempotent: true,
-  route: { method: "GET", path: "/install-plan" },
+  /**
+   * Under `/site` because the plan is a projection of the site's own
+   * settings — and because the MCP catalogue groups tools by the first path
+   * segment, so a top-level `/install-plan` would land an agent-facing tool in
+   * an "Other" section nobody reads.
+   */
+  route: { method: "GET", path: "/site/install-plan" },
   handler: async (input, { actor, services }): Promise<InstallPlan> => {
     const site = await requireSiteRow(services.db, actor.siteId);
 

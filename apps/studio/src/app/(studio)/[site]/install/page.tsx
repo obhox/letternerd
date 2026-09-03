@@ -140,11 +140,10 @@ export default async function InstallPage({ params }: { params: Promise<{ site: 
         <Step number={2} id="install" title="Install the package">
           <StepNote>
             <strong className="font-semibold text-[var(--color-ink)]">
-              This package is not published to a registry.
+              The tag is required while this is pre-release.
             </strong>{" "}
-            There is no <Value>npm i @letternerd/sdk</Value> that works today. Depend on the checkout
-            instead — a workspace dependency if your site lives in this monorepo, a{" "}
-            <Value>file:</Value> dependency if it does not.
+            A bare <Value>pnpm add @letternerd/sdk</Value> will not resolve — only{" "}
+            <Value>@next</Value> does. The path form below is for working inside the CMS checkout.
           </StepNote>
           <CodeBlock label="terminal" code={installSnippet()} />
         </Step>

@@ -67,10 +67,19 @@ describe("derived values", () => {
 });
 
 describe("the snippets carry this site's values", () => {
-  it("does not pretend the package is on a registry", () => {
+  /**
+   * This replaces an assertion that the package was NOT on a registry, which
+   * stopped being true the moment it was published. The guarantee worth keeping
+   * is not "no registry install" but "never an install that silently fails":
+   * 0.1.0 sits on the `next` dist-tag, so a bare `pnpm add @letternerd/sdk`
+   * resolves to nothing and the tag has to be explicit.
+   */
+  it("always pins the dist-tag, since a bare install does not resolve", () => {
     const snippet = installSnippet();
-    expect(snippet).not.toMatch(/npm i(nstall)? @letternerd\/sdk\s*$/m);
-    expect(snippet).toContain("@letternerd/sdk@workspace:*");
+    expect(snippet).toContain("@letternerd/sdk@next");
+    // A bare add on its own line would be the one command that quietly fails.
+    expect(snippet).not.toMatch(/^\s*(pnpm add|npm i(nstall)?|yarn add) @letternerd\/sdk\s*$/m);
+    // The local path form stays: it is what works inside this checkout.
     expect(snippet).toContain("file:../cms/packages/sdk");
   });
 

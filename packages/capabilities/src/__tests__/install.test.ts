@@ -90,7 +90,7 @@ describe("get_install_plan", () => {
     expect(getInstallPlan.readOnly).toBe(true);
     expect(getInstallPlan.scopes).toEqual(["content:read"]);
     expect(getInstallPlan.role).toBe("author");
-    expect(getInstallPlan.route).toEqual({ method: "GET", path: "/install-plan" });
+    expect(getInstallPlan.route).toEqual({ method: "GET", path: "/site/install-plan" });
   });
 
   it("tells an agent it returns files and that it must read before writing", () => {

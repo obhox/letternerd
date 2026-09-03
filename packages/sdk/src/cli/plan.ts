@@ -108,7 +108,7 @@ export interface FetchPlanOptions {
  */
 export async function fetchPlan(options: FetchPlanOptions): Promise<ResolvedPlan> {
   const doFetch = options.fetchImpl ?? fetch;
-  const url = new URL(`${trimSlash(options.studioOrigin)}/api/v1/install-plan`);
+  const url = new URL(`${trimSlash(options.studioOrigin)}/api/v1/site/install-plan`);
   url.searchParams.set("framework", "next-app-router");
   url.searchParams.set("packageManager", options.packageManager);
   if (options.blogPath) url.searchParams.set("blogBasePath", options.blogPath);
