@@ -1,9 +1,17 @@
 # Plain Node runner for workspace scripts — migrations today, a background
 # worker later. Alpine is fine here because nothing in this image touches sharp.
 #
-# Unlike the studio image this one *can* be pruned: it runs tsx against a
-# package's source and has no bundler output whose module resolution depends on
-# the original layout.
+# It runs tsx against a package's source, so it needs that package's sources and
+# a node_modules tree it can resolve from — nothing bundled, nothing built.
+#
+# This used to call `pnpm deploy --legacy` to prune a standalone tree. That is
+# the one thing this image must not do: the legacy implementation cannot read a
+# shared workspace lockfile, so it re-resolved every dependency at build time.
+# The image was therefore never pinned to the lockfile, and the build broke the
+# day Next published 16.3.4 — `minimum-release-age` in .npmrc was inspecting
+# those resolutions, which is the only reason anyone noticed. A frozen-lockfile
+# install of just this package's production closure gets a pinned tree instead,
+# and cannot break because an unrelated package published a release.
 
 ARG APP=@cms/db
 
@@ -28,20 +36,36 @@ COPY packages/seo/package.json     packages/seo/
 COPY packages/media/package.json   packages/media/
 COPY packages/analytics/package.json    packages/analytics/
 COPY packages/capabilities/package.json packages/capabilities/
-RUN pnpm install --frozen-lockfile
+
+# `<pkg>...` selects the package and its workspace dependencies, so the tree is
+# this app's production closure rather than the whole monorepo's. --prod drops
+# drizzle-kit, vitest and typescript, which nothing at runtime imports;
+# --frozen-lockfile is what keeps the versions the ones CI tested.
+ARG APP=@cms/db
+RUN pnpm install --frozen-lockfile --prod --filter "${APP}..."
 
 FROM deps AS build
 WORKDIR /repo
 COPY . .
-ARG APP
-RUN pnpm deploy --legacy --filter "${APP}" --prod /out
 
 FROM base AS runtime
 ENV NODE_ENV=production
 RUN apk add --no-cache tini
 RUN addgroup -S cms && adduser -S cms -G cms
+
+# The whole workspace, not one pruned package. pnpm's node_modules is a tree of
+# symlinks into a virtual store at the repo root, so a package directory lifted
+# out of it on its own resolves nothing — keeping the layout intact is what
+# makes the links valid.
 WORKDIR /app
-COPY --from=build --chown=cms:cms /out /app
+COPY --from=build --chown=cms:cms /repo /app
+
+# The package this image runs, so `node_modules/.bin/tsx src/migrate.ts` — the
+# command infra/docker-compose.production.yml passes — resolves exactly as it
+# does in a developer's checkout.
+ARG APP=@cms/db
+WORKDIR /app/packages/db
+
 USER cms
 ENTRYPOINT ["/sbin/tini", "--"]
 # Overridden per service; the migrate service runs `tsx src/migrate.ts`.
