@@ -15,7 +15,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@shikijs/rehype": "^3.2.1",
+    "@shikijs/rehype": "^4.4.3",
     "github-slugger": "^2.0.0",
     "gray-matter": "^4.0.3",
     "hast-util-to-string": "^3.0.1",
