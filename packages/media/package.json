@@ -15,11 +15,11 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.734.0",
-    "@aws-sdk/s3-request-presigner": "^3.734.0",
+    "@aws-sdk/client-s3": "^3.1141.0",
+    "@aws-sdk/s3-request-presigner": "^3.1141.0",
     "@cms/core": "workspace:*",
     "blurhash": "^2.0.5",
-    "sharp": "^0.35.0",
+    "sharp": "^0.35.5",
     "zod": "^3.24.1"
   },
   "devDependencies": {

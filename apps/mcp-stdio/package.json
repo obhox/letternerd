@@ -19,11 +19,11 @@
     "@cms/core": "workspace:*",
     "@cms/db": "workspace:*",
     "@cms/media": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@modelcontextprotocol/sdk": "^1.30.1",
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "tsx": "^4.19.2",
+    "tsx": "^4.23.15",
     "typescript": "^5.7.3",
     "vitest": "^3.0.5"
   }
