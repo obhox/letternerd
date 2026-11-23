@@ -16,7 +16,7 @@
 # (.github/dependabot.yml) only follows literal `FROM image:tag@sha256` lines —
 # a `FROM ${NODE_IMAGE}` is invisible to it. Every other stage derives from
 # `base`, so there is exactly one line to bump, and Dependabot bumps it.
-FROM node:26.8.1-slim@sha256:c0753125a3789977aefe869cbebccf70e3cfd7ea84ca48547458f02e4f1d7146 AS base
+FROM node:26.13.1-slim@sha256:e6bedef217677b276c591795e169840edd9096dbf13f29df8ef8d1856b8820bc AS base
 
 # --- dependencies -------------------------------------------------------------
 FROM base AS deps
